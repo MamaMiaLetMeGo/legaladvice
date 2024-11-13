@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\Category;
 
 class PostController extends Controller
 {
@@ -63,5 +64,11 @@ class PostController extends Controller
 
         // If we get here, the post is not viewable
         abort(404, 'Post not found or not available.');
+    }
+
+    public function create()
+    {
+        $categories = Category::all();
+        return view('admin.posts.create', compact('categories'));
     }
 }

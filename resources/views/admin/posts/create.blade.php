@@ -53,8 +53,24 @@
             </div>
 
             <div class="mb-6">
-                <label for="categories" class="block text-sm font-medium text-gray-700">Categories (comma-separated)</label>
-                <input type="text" name="categories" id="categories" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ old('categories') }}">
+                <label for="categories" class="block text-sm font-medium text-gray-700">
+                    Categories
+                </label>
+                <select 
+                    name="categories[]" 
+                    id="categories" 
+                    multiple
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}" {{ in_array($category->id, old('categories', [])) ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('categories')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6">
@@ -75,3 +91,18 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    // Initialize Tom Select for categories
+    new TomSelect('#categories', {
+        plugins: ['remove_button'],
+        create: false
+    });
+</script>
+@endpush

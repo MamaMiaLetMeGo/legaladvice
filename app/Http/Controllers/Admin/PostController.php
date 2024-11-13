@@ -48,7 +48,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = Category::all();
         return view('admin.posts.create', compact('categories'));
     }
 
@@ -57,30 +57,25 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required',
-            'body_content' => 'required',
             'slug' => 'required|unique:posts',
+            'body_content' => 'required',
+            'categories' => 'required|array',
+            'categories.*' => 'exists:categories,id',
         ]);
 
-        $post = new Post;
-        $post->title = $request->title;
-        $post->author_id = auth()->id();
-        $post->breadcrumb = $request->breadcrumb;
-        $post->body_content = $request->body_content;
-        $post->featured_image = $request->featured_image;
-        $post->slug = $request->slug;
-        $post->video_url = $request->video_url;
-        $post->published_date = $request->published_date;
-        $post->save();
+        $post = Post::create([
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'body_content' => $validated['body_content'],
+            'author_id' => auth()->id(),
+        ]);
 
-        if ($request->has('categories')) {
-            $post->categories()->sync($request->categories);
-        }
+        $post->categories()->attach($request->categories);
 
-        return redirect()
-            ->route('admin.posts.index')
-            ->with('success', 'Post created successfully');
+        return redirect()->route('admin.posts.index')
+            ->with('success', 'Post created successfully.');
     }
 
     /**
