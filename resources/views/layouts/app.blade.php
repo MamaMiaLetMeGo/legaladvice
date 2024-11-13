@@ -61,6 +61,8 @@
             <main>
                 @yield('content')
             </main>
+            @include('layouts.footer')
         </div>
+        @stack('scripts')
     </body>
 </html>

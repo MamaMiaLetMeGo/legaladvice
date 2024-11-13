@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Models\Post;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CategoryViewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +31,10 @@ Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 Route::get('/posts/category/{category:slug}', [PostController::class, 'category'])->name('posts.category');
 Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.show');
 
+// Public routes
+Route::get('/categories', [CategoryViewController::class, 'index'])->name('categories.index');
+Route::get('/categories/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
+
 // Admin routes
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
@@ -36,6 +42,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     
     // Posts Management
     Route::resource('posts', AdminPostController::class);
+
+    // Category Management
+    Route::resource('categories', CategoryController::class);
     
     // Post Status Management
     Route::post('/posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');

@@ -57,7 +57,7 @@ class Post extends Model
         return $this->belongsTo(User::class, 'author_id');
     }
 
-    public function scopePublished($query)
+    public function scopePublished(Builder $query)
     {
         return $query->where('status', 'published')
                     ->whereNotNull('published_date')
