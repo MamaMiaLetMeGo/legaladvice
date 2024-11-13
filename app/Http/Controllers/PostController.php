@@ -4,98 +4,64 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
-    // Display a listing of posts
-    public function index()
+    /**
+     * Display the specified post.
+     */
+    public function show(Post $post)
     {
-        $posts = Post::latest('published_date')->get();
-        return view('posts.index', compact('posts'));
-    }
-
-    // Show the form for creating a new post
-    public function create()
-    {
-        return view('admin.posts.create');
-    }
-
-    // Store a newly created post in the database
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required',
-            'author' => 'required',
-            'body_content' => 'required',
-            'slug' => 'required|unique:posts',
+        // Debug information
+        Log::info('Showing post', [
+            'post_id' => $post->id,
+            'slug' => $post->slug,
+            'status' => $post->status,
+            'published_date' => $post->published_date,
+            'is_published' => $post->isPublished(),
+            'user_authenticated' => auth()->check()
         ]);
 
-        $post = new Post;
-        $post->title = $request->title;
-        $post->author = $request->author;
-        $post->breadcrumb = $request->breadcrumb;
-        $post->body_content = $request->body_content;
-        $post->featured_image = $request->featured_image;
-        $post->categories = $request->categories;
-        $post->slug = $request->slug;
-        $post->video_url = $request->video_url;
-        $post->published_date = $request->published_date;
-        $post->save();
+        // If post is published, show it
+        if ($post->isPublished()) {
+            $post->load(['author', 'categories']);
 
-        return redirect()->route('admin.posts.index')->with('success', 'Post created successfully');
-    }
+            $relatedPosts = Post::whereHas('categories', function ($query) use ($post) {
+                $query->whereIn('categories.id', $post->categories->pluck('id'));
+            })
+            ->where('id', '!=', $post->id)
+            ->published()
+            ->latest('published_date')
+            ->take(3)
+            ->get();
 
-    // Display the specified post
-    public function show($slug)
-    {
-        $post = Post::where('slug', $slug)->firstOrFail();
-        return view('posts.show', compact('post'));
-    }
+            return view('posts.show', compact('post', 'relatedPosts'));
+        }
 
-    // Show the form for editing the specified post
-    public function edit($id)
-    {
-        $post = Post::findOrFail($id);
-        return view('admin.posts.edit', compact('post'));
-    }
+        // If user is authenticated and can view unpublished posts
+        if (auth()->check()) {
+            // Check if user is admin or post author
+            if (auth()->user()->id === $post->author_id || auth()->user()->is_admin) {
+                $post->load(['author', 'categories']);
 
-    // Update the specified post in the database
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'title' => 'required',
-            'author' => 'required',
-            'body_content' => 'required',
-            'slug' => 'required|unique:posts,slug,' . $id,
-        ]);
+                $relatedPosts = Post::whereHas('categories', function ($query) use ($post) {
+                    $query->whereIn('categories.id', $post->categories->pluck('id'));
+                })
+                ->where('id', '!=', $post->id)
+                ->latest('published_date')
+                ->take(3)
+                ->get();
 
-        $post = Post::findOrFail($id);
-        $post->title = $request->title;
-        $post->author = $request->author;
-        $post->breadcrumb = $request->breadcrumb;
-        $post->body_content = $request->body_content;
-        $post->featured_image = $request->featured_image;
-        $post->categories = $request->categories;
-        $post->slug = $request->slug;
-        $post->video_url = $request->video_url;
-        $post->save();
+                return view('posts.show', [
+                    'post' => $post,
+                    'relatedPosts' => $relatedPosts,
+                    'preview' => true
+                ]);
+            }
+        }
 
-        return redirect()->route('admin.posts.index')->with('success', 'Post updated successfully');
-    }
-
-    // Remove the specified post from the database
-    public function destroy($id)
-    {
-        $post = Post::findOrFail($id);
-        $post->delete();
-
-        return redirect()->route('admin.posts.index')->with('success', 'Post deleted successfully');
-    }
-
-    // Display a list of posts for the admin
-    public function adminIndex()
-    {
-        $posts = Post::all();
-        return view('admin.posts.index', compact('posts'));
+        // If we get here, the post is not viewable
+        abort(404, 'Post not found or not available.');
     }
 }

@@ -2,35 +2,47 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\Admin\PostController as AdminPostController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 
-// Admin routes with auth middleware
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/posts', [PostController::class, 'adminIndex'])->name('posts.index');
-    Route::get('/posts/create', [PostController::class, 'create'])->name('posts.create');
-    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
-    Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
-    Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
-    Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
-});
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 // Public routes
 Route::get('/', function () {
-    $posts = Post::latest('published_date')
-                 ->take(6)
-                 ->get();
+    $posts = Post::with(['author', 'categories'])
+        ->published()
+        ->latest('published_date')
+        ->take(6)
+        ->get();
+
     return view('home', compact('posts'));
 })->name('home');
 
-// Public post routes
-Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
-Route::get('/posts/{slug}', [PostController::class, 'show'])->name('posts.show');
+// Blog routes
+Route::prefix('blog')->group(function () {
+    Route::get('/', [PostController::class, 'index'])->name('posts.index');
+    Route::get('/{post:slug}', [PostController::class, 'show'])->name('posts.show');
+});
 
-// Dashboard route
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Admin routes
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Posts Management
+    Route::resource('posts', AdminPostController::class);
+    
+    // Post Status Management
+    Route::post('/posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
+    Route::post('/posts/{post}/unpublish', [AdminPostController::class, 'unpublish'])->name('posts.unpublish');
+    Route::post('/posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
+});
 
 // Profile routes
 Route::middleware('auth')->group(function () {
