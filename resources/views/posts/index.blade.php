@@ -4,9 +4,11 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="mb-8 flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-900">All Posts</h1>
-        <a href="{{ route('posts.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Create New Post
-        </a>
+        @auth
+            <a href="{{ route('admin.posts.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Create New Post
+            </a>
+        @endauth
     </div>
 
     <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -44,18 +46,20 @@
                         <a href="{{ route('posts.show', $post->slug) }}" class="text-blue-600 hover:text-blue-800 font-medium">
                             Read More →
                         </a>
-                        <div class="flex space-x-2">
-                            <a href="{{ route('posts.edit', $post->id) }}" class="text-gray-600 hover:text-gray-900">
-                                Edit
-                            </a>
-                            <form action="{{ route('posts.destroy', $post->id) }}" method="POST" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800" onclick="return confirm('Are you sure you want to delete this post?')">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
+                        @auth
+                            <div class="flex space-x-2">
+                                <a href="{{ route('admin.posts.edit', $post->id) }}" class="text-gray-600 hover:text-gray-900">
+                                    Edit
+                                </a>
+                                <form action="{{ route('admin.posts.destroy', $post->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800" onclick="return confirm('Are you sure you want to delete this post?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        @endauth
                     </div>
                 </div>
             </div>
