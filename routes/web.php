@@ -24,11 +24,10 @@ Route::get('/', function () {
     return view('home', compact('posts'));
 })->name('home');
 
-// Blog routes
-Route::prefix('blog')->group(function () {
-    Route::get('/', [PostController::class, 'index'])->name('posts.index');
-    Route::get('/{post:slug}', [PostController::class, 'show'])->name('posts.show');
-});
+// Public post routes
+Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
+Route::get('/posts/category/{category:slug}', [PostController::class, 'category'])->name('posts.category');
+Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.show');
 
 // Admin routes
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

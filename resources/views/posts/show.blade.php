@@ -38,10 +38,10 @@
             {{-- Breadcrumb --}}
             @if($post->breadcrumb)
                 <nav class="text-sm text-gray-500 mb-4">
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-700">Blog</a>
+                    <a href="{{ route('posts.index') }}" class="hover:text-gray-700">Posts</a>
                     <span class="mx-2">/</span>
                     @if($post->categories->isNotEmpty())
-                        <a href="{{ $post->categories->first()->url }}" class="hover:text-gray-700">
+                        <a href="{{ route('posts.category', $post->categories->first()) }}" class="hover:text-gray-700">
                             {{ $post->categories->first()->name }}
                         </a>
                         <span class="mx-2">/</span>
