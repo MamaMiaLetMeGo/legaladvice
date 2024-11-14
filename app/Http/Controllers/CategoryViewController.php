@@ -13,7 +13,6 @@ class CategoryViewController extends Controller
        $categories = Category::withCount(['posts' => function($query) {
                $query->published();
            }])
-           ->has('posts')
            ->when(request('sort'), function($query) {
                if (request('sort') === 'posts') {
                    $query->orderByDesc('posts_count');
@@ -29,11 +28,6 @@ class CategoryViewController extends Controller
 
    public function show(Category $category)
    {
-       // Log if image is missing
-       if ($category->image && !Storage::exists("public/{$category->image}")) {
-           \Log::warning("Missing image for category {$category->id}: {$category->image}");
-       }
-
        $posts = $category->posts()
            ->with(['author', 'categories'])
            ->published()
@@ -58,15 +52,18 @@ class CategoryViewController extends Controller
    {
        $query = $request->get('q');
        
-       $categories = Category::where('name', 'ILIKE', "%{$query}%")
-           ->orWhere('description', 'ILIKE', "%{$query}%")
-           ->withCount(['posts' => function($query) {
-               $query->published();
-           }])
-           ->has('posts')
-           ->orderBy('name')
-           ->paginate(12)
-           ->withQueryString();
+       $categories = Category::where(function($q) use ($query) {
+           if ($query) {
+               $q->where('name', 'ILIKE', "%{$query}%")
+                 ->orWhere('description', 'ILIKE', "%{$query}%");
+           }
+       })
+       ->withCount(['posts' => function($query) {
+           $query->published();
+       }])
+       ->orderBy('name')
+       ->paginate(12)
+       ->withQueryString();
        
        return view('categories.index', compact('categories', 'query'));
    }

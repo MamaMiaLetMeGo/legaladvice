@@ -177,26 +177,19 @@ class Category extends Model
         if (!$this->image) {
             return null;
         }
-
         return Storage::disk('public')->url($this->image);
     }
 
     public function deleteImage(): bool
     {
         try {
-            if ($this->image) {
-                if (Storage::exists($this->image)) {
-                    Storage::delete($this->image);
-                } else {
-                    \Log::warning("Image file already missing for category {$this->id}: {$this->image}");
-                }
-                
+            if ($this->image && Storage::disk('public')->exists($this->image)) {
+                Storage::disk('public')->delete($this->image);
                 $this->update(['image' => null]);
                 return true;
             }
             return false;
         } catch (\Exception $e) {
-            \Log::error("Error deleting image for category {$this->id}: " . $e->getMessage());
             return false;
         }
     }

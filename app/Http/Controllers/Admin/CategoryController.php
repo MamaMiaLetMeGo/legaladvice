@@ -56,12 +56,6 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image'] = $this->handleImageUpload($request->file('image'));
-            
-            // Add debug logging
-            \Log::info('Category creation with image', [
-                'image_path' => $data['image'],
-                'exists' => Storage::disk('public')->exists($data['image'])
-            ]);
         }
 
         $category = Category::create($data);
@@ -154,34 +148,14 @@ class CategoryController extends Controller
             $filename = uniqid('category_') . '.webp';
             $path = 'categories/' . $filename;
 
-            // Debug information before saving
-            \Log::info('Image upload attempt', [
-                'original_name' => $file->getClientOriginalName(),
-                'target_path' => $path,
-                'storage_path' => storage_path('app/public/categories'),
-                'directory_exists' => is_dir(storage_path('app/public/categories')),
-                'directory_writable' => is_writable(storage_path('app/public/categories'))
-            ]);
-
             $manager = new ImageManager(new Driver());
             $image = $manager->read($file);
             
             $saved = Storage::disk('public')->put($path, $image->toWebp(80)->toString());
 
-            // Debug information after saving
-            \Log::info('Image save result', [
-                'saved' => $saved,
-                'file_exists' => Storage::disk('public')->exists($path),
-                'full_path' => storage_path('app/public/' . $path)
-            ]);
-
             return $saved ? $path : null;
 
         } catch (\Exception $e) {
-            \Log::error('Image upload failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             throw $e;
         }
     }

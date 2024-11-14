@@ -13,16 +13,7 @@
         <div class="bg-white rounded-lg shadow-md p-6">
             @if($category->image)
                 <div class="mb-6">
-                    @php
-                        $imageUrl = Storage::disk('public')->url($category->image);
-                        \Log::info('Image URL Debug', [
-                            'image_path' => $category->image,
-                            'full_url' => $imageUrl,
-                            'exists' => Storage::disk('public')->exists($category->image)
-                        ]);
-                    @endphp
-                    
-                    <img src="{{ $imageUrl }}" 
+                    <img src="{{ Storage::disk('public')->url($category->image) }}" 
                          alt="{{ $category->name }}" 
                          class="w-full h-64 object-cover rounded-lg">
                 </div>
