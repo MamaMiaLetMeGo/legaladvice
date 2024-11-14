@@ -174,22 +174,11 @@ class Category extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        try {
-            if (!$this->image) {
-                return null;
-            }
-
-            // Check if file exists in storage
-            if (!Storage::exists($this->image)) {
-                \Log::warning("Image file missing for category {$this->id}: {$this->image}");
-                return null;
-            }
-
-            return Storage::url($this->image);
-        } catch (\Exception $e) {
-            \Log::error("Error getting image URL for category {$this->id}: " . $e->getMessage());
+        if (!$this->image) {
             return null;
         }
+
+        return Storage::disk('public')->url($this->image);
     }
 
     public function deleteImage(): bool
@@ -215,7 +204,12 @@ class Category extends Model
     protected function imageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->image ? asset($this->image) : null
+            get: function () {
+                if (!$this->image) {
+                    return null;
+                }
+                return Storage::disk('public')->url($this->image);
+            }
         );
     }
 }

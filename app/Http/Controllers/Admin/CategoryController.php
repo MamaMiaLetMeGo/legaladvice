@@ -56,6 +56,12 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image'] = $this->handleImageUpload($request->file('image'));
+            
+            // Add debug logging
+            \Log::info('Category creation with image', [
+                'image_path' => $data['image'],
+                'exists' => Storage::disk('public')->exists($data['image'])
+            ]);
         }
 
         $category = Category::create($data);
@@ -84,8 +90,9 @@ class CategoryController extends Controller
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($category->image) {
-                Storage::delete($category->image);
+                Storage::disk('public')->delete($category->image);
             }
+            
             $data['image'] = $this->handleImageUpload($request->file('image'));
         }
 
@@ -143,29 +150,40 @@ class CategoryController extends Controller
      */
     protected function handleImageUpload($file)
     {
-        // Create new image manager instance with GD driver
-        $manager = new ImageManager(new Driver());
+        try {
+            $filename = uniqid('category_') . '.webp';
+            $path = 'categories/' . $filename;
 
-        // Create image instance
-        $image = $manager->read($file);
+            // Debug information before saving
+            \Log::info('Image upload attempt', [
+                'original_name' => $file->getClientOriginalName(),
+                'target_path' => $path,
+                'storage_path' => storage_path('app/public/categories'),
+                'directory_exists' => is_dir(storage_path('app/public/categories')),
+                'directory_writable' => is_writable(storage_path('app/public/categories'))
+            ]);
 
-        // Resize image while maintaining aspect ratio
-        $image->resize(800, 800, function ($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file);
+            
+            $saved = Storage::disk('public')->put($path, $image->toWebp(80)->toString());
 
-        // Convert to WebP format
-        $filename = uniqid('category_') . '.webp';
-        $path = 'categories/' . $filename;
+            // Debug information after saving
+            \Log::info('Image save result', [
+                'saved' => $saved,
+                'file_exists' => Storage::disk('public')->exists($path),
+                'full_path' => storage_path('app/public/' . $path)
+            ]);
 
-        // Save optimized image
-        Storage::put(
-            "public/{$path}", 
-            $image->toWebp(80)->toString()
-        );
+            return $saved ? $path : null;
 
-        return $path;
+        } catch (\Exception $e) {
+            \Log::error('Image upload failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**

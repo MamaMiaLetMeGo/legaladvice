@@ -37,7 +37,7 @@
             <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-300">
                 <a href="{{ route('categories.show', $category->slug) }}" class="block">
                     @if($category->image)
-                        <img src="{{ asset($category->image) }}" 
+                        <img src="{{ Storage::disk('public')->url($category->image) }}" 
                              alt="{{ $category->name }}" 
                              class="w-full h-48 object-cover rounded-md mb-4">
                     @endif

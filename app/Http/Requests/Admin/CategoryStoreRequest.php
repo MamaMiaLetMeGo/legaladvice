@@ -18,12 +18,7 @@ class CategoryStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:categories,slug' . ($this->category ? ',' . $this->category->id : '')],
             'description' => ['nullable', 'string'],
-            'image' => [
-                'nullable',
-                'file',
-                'mimes:jpeg,png,jpg,webp',
-                'max:2048', // 2MB max
-            ],
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ];
     }
 
