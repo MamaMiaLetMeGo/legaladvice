@@ -34,36 +34,31 @@
             @forelse($posts as $post)
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                     @if($post->featured_image)
-                        <img src="{{ $post->featured_image }}" alt="{{ $post->title }}" class="w-full h-48 object-cover">
+                        <img src="{{ $post->featured_image_url }}" 
+                             alt="{{ $post->title }}" 
+                             class="w-full h-48 object-cover">
                     @endif
                     <div class="p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                            <a href="{{ route('posts.show', $post->slug) }}" class="hover:text-blue-600">
+                            <a href="{{ route('posts.show', $post->slug) }}" 
+                               class="hover:text-blue-600">
                                 {{ $post->title }}
                             </a>
                         </h3>
-                        <div class="text-sm text-gray-500 mb-4">
-                            <span>By {{ $post->author }}</span>
-                            @if($post->published_date)
-                                <span class="mx-2">•</span>
-                                <span>{{ \Carbon\Carbon::parse($post->published_date)->format('M d, Y') }}</span>
-                            @endif
-                        </div>
-                        <p class="text-gray-600 mb-4">
-                            {{ Str::limit(strip_tags($post->body_content), 150) }}
-                        </p>
-                        @if($post->categories)
-                            <div class="mb-4">
-                                @foreach(explode(',', $post->categories) as $category)
-                                    <span class="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-600 mr-2">
-                                        {{ trim($category) }}
-                                    </span>
-                                @endforeach
+                        <div class="text-sm text-gray-500 mb-4 flex items-center justify-between">
+                            <div class="flex items-center">
+                                @if($post->author->profile_image)
+                                    <img src="{{ $post->author->profile_image_url }}" 
+                                         alt="{{ $post->author->name }}" 
+                                         class="w-6 h-6 rounded-full mr-2">
+                                @endif
+                                <span>{{ $post->author->name }}</span>
                             </div>
-                        @endif
-                        <a href="{{ route('posts.show', $post->slug) }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                            Read More →
-                        </a>
+                            <span>{{ $post->reading_time }} min read</span>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {{ $post->published_date->format('M d, Y') }}
+                        </div>
                     </div>
                 </div>
             @empty
