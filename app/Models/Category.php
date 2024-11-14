@@ -20,11 +20,11 @@ class Category extends Model
         'name',
         'slug',
         'description',
-        'is_featured',
         'color',
         'icon',
         'meta_title',
         'meta_description',
+        'image'
     ];
 
     /**

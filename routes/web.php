@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryViewController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,12 +45,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('posts', AdminPostController::class);
 
     // Category Management
-    Route::resource('categories', CategoryController::class);
+    Route::resource('categories', AdminCategoryController::class);
     
     // Post Status Management
     Route::post('/posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
     Route::post('/posts/{post}/unpublish', [AdminPostController::class, 'unpublish'])->name('posts.unpublish');
     Route::post('/posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
+
+    // Add the new toggle route
+    Route::post('categories/{category}/toggle-featured', [AdminCategoryController::class, 'toggleFeatured'])
+        ->name('categories.toggleFeatured');
 });
 
 // Profile routes

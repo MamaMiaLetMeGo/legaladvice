@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Http\Requests\Admin\CategoryStoreRequest;
 use App\Http\Requests\Admin\CategoryUpdateRequest;
@@ -114,11 +115,7 @@ class CategoryController extends Controller
             'is_featured' => !$category->is_featured
         ]);
 
-        return back()->with('success', 
-            $category->is_featured 
-                ? 'Category is now featured' 
-                : 'Category is no longer featured'
-        );
+        return back()->with('success', 'Category featured status updated successfully');
     }
 
     /**
