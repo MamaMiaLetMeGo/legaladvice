@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <form action="{{ route('admin.categories.update', $category) }}" method="POST" class="mt-6 space-y-8 divide-y divide-gray-200">
+        <form action="{{ route('admin.categories.update', $category) }}" method="POST" enctype="multipart/form-data" class="mt-6 space-y-8 divide-y divide-gray-200">
             @csrf
             @method('PUT')
 
@@ -128,6 +128,37 @@
                             @enderror
                         </div>
 
+                        {{-- Image Upload --}}
+                        <div class="sm:col-span-6">
+                            <label class="block text-sm font-medium text-gray-700">Category Image</label>
+                            <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition-colors">
+                                <div class="space-y-1 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <img id="imagePreview" 
+                                             src="{{ $category->image ? asset($category->image) : '' }}" 
+                                             class="h-32 w-32 object-cover rounded-lg mb-4 {{ $category->image ? '' : 'hidden' }}">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400 {{ $category->image ? 'hidden' : '' }}" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <div class="flex text-sm text-gray-600">
+                                            <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                                <span>Upload a file</span>
+                                                <input id="image" name="image" type="file" class="sr-only" accept="image/*">
+                                            </label>
+                                            <p class="pl-1">or drag and drop</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">PNG, JPG, WEBP up to 2MB</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @error('image')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @if(session('image_error'))
+                                <p class="mt-2 text-sm text-red-600">{{ session('image_error') }}</p>
+                            @endif
+                        </div>
+
                         {{-- Featured Toggle --}}
                         <div class="sm:col-span-6">
                             <div class="flex items-start">
@@ -219,6 +250,13 @@
 
 @push('scripts')
 <script>
+    // Constants for image validation
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    const MIN_WIDTH = 200;
+    const MIN_HEIGHT = 200;
+    const MAX_WIDTH = 2000;
+    const MAX_HEIGHT = 2000;
+
     // Preview meta title and description lengths
     const metaTitleInput = document.getElementById('meta_title');
     const metaDescInput = document.getElementById('meta_description');
@@ -254,5 +292,155 @@
             updateCharCount(metaTitleInput, 60);
         }
     });
+
+    // Loading state elements
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.className = 'fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50';
+    loadingOverlay.innerHTML = `
+        <div class="bg-white rounded-lg px-4 py-3 shadow-xl">
+            <div class="flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <p class="text-gray-700">Processing image...</p>
+            </div>
+        </div>
+    `;
+
+    // Error toast notification
+    function showError(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg z-50';
+        toast.innerHTML = `
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-auto pl-3">
+                    <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    // Image validation function
+    async function validateImage(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            
+            img.onload = function() {
+                URL.revokeObjectURL(img.src);
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                
+                if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+                    reject(`Image must be at least ${MIN_WIDTH}x${MIN_HEIGHT}px`);
+                } else if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+                    reject(`Image must be no larger than ${MAX_WIDTH}x${MAX_HEIGHT}px`);
+                } else {
+                    resolve();
+                }
+            };
+            
+            img.onerror = () => reject('Invalid image file');
+        });
+    }
+
+    // Handle file processing
+    async function processFile(file) {
+        if (!file) return;
+
+        try {
+            // Show loading state
+            document.body.appendChild(loadingOverlay);
+
+            // Validate file size
+            if (file.size > MAX_FILE_SIZE) {
+                throw new Error('File is too large. Maximum size is 2MB.');
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                throw new Error('Please upload an image file.');
+            }
+
+            // Validate dimensions
+            await validateImage(file);
+
+            // Preview image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                document.querySelector('#dropZone svg').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            showError(error.message);
+            const input = document.getElementById('image');
+            input.value = ''; // Clear the input
+        } finally {
+            // Remove loading state
+            loadingOverlay.remove();
+        }
+    }
+
+    // Image input change handler
+    document.getElementById('image')?.addEventListener('change', function(e) {
+        processFile(e.target.files[0]);
+    });
+
+    // Drag and drop functionality
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            dropZone.classList.add('border-blue-500', 'border-2');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-blue-500', 'border-2');
+        }
+
+        dropZone.addEventListener('drop', async function(e) {
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                await processFile(file);
+                if (!document.getElementById('imagePreview').classList.contains('hidden')) {
+                    // Only update input if validation passed
+                    const input = document.getElementById('image');
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                }
+            }
+        });
+    }
 </script>
 @endpush

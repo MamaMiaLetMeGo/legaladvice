@@ -34,6 +34,7 @@ Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.s
 
 // Public routes
 Route::get('/categories', [CategoryViewController::class, 'index'])->name('categories.index');
+Route::get('/categories/search', [CategoryViewController::class, 'search'])->name('categories.search');
 Route::get('/categories/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
 
 // Admin routes

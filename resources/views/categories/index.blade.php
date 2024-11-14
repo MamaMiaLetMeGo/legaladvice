@@ -6,6 +6,32 @@
         <h1 class="text-3xl font-bold">Categories</h1>
     </div>
 
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <form action="{{ route('categories.search') }}" method="GET" class="flex gap-2">
+                <input 
+                    type="text" 
+                    name="q" 
+                    value="{{ $query ?? '' }}"
+                    placeholder="Search categories..."
+                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Search
+                </button>
+            </form>
+        </div>
+        <div>
+            <select 
+                onchange="window.location.href='{{ route('categories.index') }}?sort=' + this.value"
+                class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+                <option value="" {{ !request('sort') ? 'selected' : '' }}>Sort by name</option>
+                <option value="posts" {{ request('sort') === 'posts' ? 'selected' : '' }}>Sort by post count</option>
+            </select>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse ($categories as $category)
             <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-300">

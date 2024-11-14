@@ -23,7 +23,10 @@
                         <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
                                 <div class="flex text-sm">
-                                    <p class="font-medium text-blue-600 truncate">{{ $category->name }}</p>
+                                    <a href="{{ route('categories.show', $category->slug) }}" 
+                                       class="font-medium text-blue-600 truncate hover:text-blue-800 hover:underline">
+                                        {{ $category->name }}
+                                    </a>
                                     <p class="ml-1 flex-shrink-0 font-normal text-gray-500">in {{ $category->posts_count }} posts</p>
                                 </div>
                                 <div class="mt-2 flex">

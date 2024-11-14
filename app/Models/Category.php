@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Category extends Model
 {
@@ -167,5 +170,52 @@ class Category extends Model
         ->orderByDesc('posts_count')
         ->limit($limit)
         ->get();
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        try {
+            if (!$this->image) {
+                return null;
+            }
+
+            // Check if file exists in storage
+            if (!Storage::exists($this->image)) {
+                \Log::warning("Image file missing for category {$this->id}: {$this->image}");
+                return null;
+            }
+
+            return Storage::url($this->image);
+        } catch (\Exception $e) {
+            \Log::error("Error getting image URL for category {$this->id}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function deleteImage(): bool
+    {
+        try {
+            if ($this->image) {
+                if (Storage::exists($this->image)) {
+                    Storage::delete($this->image);
+                } else {
+                    \Log::warning("Image file already missing for category {$this->id}: {$this->image}");
+                }
+                
+                $this->update(['image' => null]);
+                return true;
+            }
+            return false;
+        } catch (\Exception $e) {
+            \Log::error("Error deleting image for category {$this->id}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->image ? asset($this->image) : null
+        );
     }
 }

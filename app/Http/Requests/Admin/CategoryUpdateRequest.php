@@ -16,11 +16,14 @@ class CategoryUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => [
-                'required', 
-                'string', 
-                'max:255',
-                Rule::unique('categories')->ignore($this->category),
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'unique:categories,slug' . ($this->category ? ',' . $this->category->id : '')],
+            'description' => ['nullable', 'string'],
+            'image' => [
+                'nullable',
+                'file',
+                'mimes:jpeg,png,jpg,webp',
+                'max:2048', // 2MB max
             ],
             'description' => ['nullable', 'string', 'max:1000'],
             'is_featured' => ['boolean'],

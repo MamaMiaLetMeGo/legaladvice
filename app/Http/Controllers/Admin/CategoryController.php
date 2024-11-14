@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\CategoryUpdateRequest;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Log;
 
 class CategoryController extends Controller
 {
@@ -33,6 +34,17 @@ class CategoryController extends Controller
     {
         $icons = $this->getAvailableIcons();
         return view('admin.categories.create', compact('icons'));
+    }
+
+    public function show(Category $category)
+    {
+        $posts = $category->posts()
+            ->with(['author', 'categories'])
+            ->published()
+            ->latest('published_date')
+            ->paginate(12);
+
+        return view('categories.show', compact('category', 'posts'));
     }
 
     /**
@@ -89,21 +101,29 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        // Check if category has posts
-        if ($category->posts()->exists()) {
-            return back()->with('error', 'Cannot delete category that contains posts');
+        try {
+            if ($category->posts()->exists()) {
+                return back()->with('error', 'Cannot delete category that contains posts');
+            }
+
+            // Use the helper method to delete the image
+            $imageDeleted = $category->deleteImage();
+            
+            if (!$imageDeleted && $category->image) {
+                \Log::warning('Failed to delete image for category: ' . $category->id);
+            }
+
+            $category->delete();
+
+            return redirect()
+                ->route('admin.categories.index')
+                ->with('success', 'Category deleted successfully');
+
+        } catch (\Exception $e) {
+            \Log::error('Error deleting category: ' . $e->getMessage());
+            
+            return back()->with('error', 'An error occurred while deleting the category');
         }
-
-        // Delete category image if exists
-        if ($category->image) {
-            Storage::delete($category->image);
-        }
-
-        $category->delete();
-
-        return redirect()
-            ->route('admin.categories.index')
-            ->with('success', 'Category deleted successfully');
     }
 
     /**
