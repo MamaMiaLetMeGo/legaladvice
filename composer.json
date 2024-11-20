@@ -9,8 +9,7 @@
         "doctrine/dbal": "^4.2",
         "intervention/image": "^3.9",
         "laravel/framework": "^11.9",
-        "laravel/tinker": "^2.9",
-        "supabase/supabase-php": "^2.1"
+        "laravel/tinker": "^2.9"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
