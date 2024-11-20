@@ -32,6 +32,18 @@ Route::get('/', function () {
    return view('home', compact('posts'));
 })->name('home');
 
+// Debug route (remove before production)
+Route::get('/env-debug', function () {
+    return [
+        'DB_CONNECTION_STRING' => env('DB_CONNECTION_STRING'),
+        'DB_HOST' => env('DB_HOST'),
+        'DB_PORT' => env('DB_PORT'),
+        'DB_DATABASE' => env('DB_DATABASE'),
+        'DB_USERNAME' => env('DB_USERNAME'),
+        'DATABASE_URL' => env('DATABASE_URL'),
+    ];
+});
+
 // Public post routes
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 Route::get('/posts/category/{category:slug}', [PostController::class, 'category'])->name('posts.category');
