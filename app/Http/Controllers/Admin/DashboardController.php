@@ -20,18 +20,15 @@ class DashboardController extends Controller
             'thisMonth' => Post::whereMonth('created_at', Carbon::now()->month)->count(),
         ];
 
-        // Get category statistics
-        $categoryStats = Category::withCount('posts')->get();
-
         // Get recent posts
         $recentPosts = Post::with(['author', 'categories'])
             ->latest()
             ->take(5)
             ->get();
 
-        // Get monthly post counts for chart
+        // Get monthly post counts for chart - PostgreSQL version
         $monthlyPosts = Post::select(
-            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+            DB::raw("to_char(created_at, 'YYYY-MM') as month"),
             DB::raw('count(*) as total')
         )
             ->groupBy('month')
@@ -41,7 +38,6 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'postStats',
-            'categoryStats',
             'recentPosts',
             'monthlyPosts'
         ));
