@@ -82,7 +82,7 @@ return [
             ]) : [],
         ],
 
-        'pgsql' => [
+       'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
@@ -94,7 +94,10 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'prefer',
+            'sslmode' => env('PGSQL_SSLMODE', 'prefer'),
+            'sslcert' => env('PGSQL_SSLCERT'),
+            'sslkey' => env('PGSQL_SSLKEY'),
+            'sslrootcert' => env('PGSQL_SSLROOTCERT'),
         ],
 
         'sqlsrv' => [
