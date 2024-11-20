@@ -57,10 +57,12 @@
                                 Description
                             </label>
                             <div class="mt-1">
-                                <textarea name="description" 
-                                          id="description" 
-                                          rows="3"
-                                          class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border border-gray-300 rounded-md">{{ old('description') }}</textarea>
+                                <input id="description" type="hidden" name="description" value="{{ old('description') }}">
+                                <trix-editor 
+                                    input="description"
+                                    class="trix-content prose max-w-full block w-full border-gray-300 rounded-md shadow-sm"
+                                    style="min-height: 15rem;">
+                                </trix-editor>
                             </div>
                             <p class="mt-2 text-sm text-gray-500">Brief description of the category.</p>
                             @error('description')
@@ -394,5 +396,57 @@
             }
         });
     }
+
+    // Prevent file uploads through Trix (if you don't want them)
+    document.addEventListener('trix-file-accept', function(e) {
+        e.preventDefault();
+    });
+    
+    // Custom attachment behavior (if you want to handle uploads)
+    document.addEventListener('trix-attachment-add', function(e) {
+        // Handle file upload here if needed
+    });
+    
+    // Initialize Trix with any custom configurations
+    document.addEventListener('trix-initialize', function(e) {
+        // Any initialization code
+    });
 </script>
+@endpush
+
+@push('styles')
+<style>
+    trix-editor {
+        @apply block w-full rounded-md border-gray-300;
+        min-height: 15rem;
+    }
+    
+    trix-toolbar {
+        @apply border border-gray-300 rounded-t-md bg-gray-50 p-2;
+    }
+    
+    trix-toolbar .trix-button-group {
+        @apply mr-2;
+    }
+    
+    trix-toolbar .trix-button {
+        @apply border border-gray-300 rounded p-1 bg-white hover:bg-gray-100;
+    }
+    
+    trix-toolbar .trix-button.trix-active {
+        @apply bg-blue-50 border-blue-500;
+    }
+    
+    .trix-content {
+        @apply prose max-w-none;
+    }
+    
+    .trix-content ul {
+        @apply list-disc pl-4;
+    }
+    
+    .trix-content ol {
+        @apply list-decimal pl-4;
+    }
+</style>
 @endpush

@@ -35,19 +35,43 @@
         @endif
 
         <div class="p-8">
-            {{-- Breadcrumb --}}
-            @if($post->breadcrumb)
-                <nav class="text-sm text-gray-500 mb-4">
-                    <a href="{{ route('posts.index') }}" class="hover:text-gray-700">Posts</a>
-                    <span class="mx-2">/</span>
-                    @if($post->categories->isNotEmpty())
-                        <a href="{{ route('posts.category', $post->categories->first()) }}" class="hover:text-gray-700">
-                            {{ $post->categories->first()->name }}
-                        </a>
+            {{-- Breadcrumb and Category Info --}}
+            @if($post->breadcrumb || $post->categories->isNotEmpty())
+                <div class="mb-8">
+                    {{-- Breadcrumb --}}
+                    <nav class="text-sm text-gray-500 mb-4">
+                        <a href="{{ route('posts.index') }}" class="hover:text-gray-700">Posts</a>
                         <span class="mx-2">/</span>
+                        @if($post->categories->isNotEmpty())
+                            <a href="{{ route('posts.category', $post->categories->first()) }}" class="hover:text-gray-700">
+                                {{ $post->categories->first()->name }}
+                            </a>
+                            <span class="mx-2">/</span>
+                        @endif
+                        <span>{{ $post->breadcrumb }}</span>
+                    </nav>
+
+                    {{-- Category Description --}}
+                    @if($post->categories->isNotEmpty() && $post->categories->first()->description)
+                        <div class="mt-4 bg-blue-50 rounded-lg p-4">
+                            <div class="flex">
+                                @if($post->categories->first()->icon)
+                                    <div class="flex-shrink-0">
+                                        <i class="{{ $post->categories->first()->icon }} text-blue-600 text-xl"></i>
+                                    </div>
+                                @endif
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-blue-800">
+                                        About {{ $post->categories->first()->name }}
+                                    </h3>
+                                    <div class="mt-2 text-sm text-blue-700 prose prose-sm max-w-none">
+                                        {!! $post->categories->first()->description !!}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
-                    <span>{{ $post->breadcrumb }}</span>
-                </nav>
+                </div>
             @endif
 
             {{-- Title and Meta --}}
@@ -224,4 +248,28 @@
         alert('Link copied to clipboard!');
     }
 </script>
+@endpush
+
+@push('styles')
+<style>
+    .prose-sm {
+        @apply prose-blue;
+    }
+    
+    .prose-sm ul {
+        @apply list-disc pl-4;
+    }
+    
+    .prose-sm ol {
+        @apply list-decimal pl-4;
+    }
+    
+    .prose-sm a {
+        @apply text-blue-600 hover:text-blue-800;
+    }
+    
+    .prose-sm p:last-child {
+        @apply mb-0;
+    }
+</style>
 @endpush
