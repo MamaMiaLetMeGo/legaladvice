@@ -24,6 +24,7 @@ return [
             'options' => [
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 60,
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ],
         ],
 
