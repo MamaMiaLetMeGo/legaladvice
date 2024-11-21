@@ -4,22 +4,16 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <!-- Preload Assets -->
-        @production
-            <link rel="preload" href="{{ asset('build/assets/app.css') }}" as="style">
-            <link rel="preload" href="{{ asset('build/assets/app.js') }}" as="script">
-        @endproduction
+
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Styles -->
-        @viteReactRefresh
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        
-        <!-- Fallback if Vite fails -->
-        @if(!app()->environment('local'))
-            <link rel="stylesheet" href="{{ asset('build/assets/app.css') }}">
-            <script src="{{ asset('build/assets/app.js') }}" defer></script>
-        @endif
+        <!-- Production Assets -->
+        @production
+            <link rel="stylesheet" href="{{ asset('build/assets/app-2juYq1Hy.css') }}">
+            <script src="{{ asset('build/assets/app-BjCBnTiP.js') }}" defer></script>
+        @else
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endproduction
 
         <!-- Add Trix CSS -->
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.css">
