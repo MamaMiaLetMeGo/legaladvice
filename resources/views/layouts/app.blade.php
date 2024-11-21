@@ -4,11 +4,22 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-
+        <!-- Preload Assets -->
+        @production
+            <link rel="preload" href="{{ asset('build/assets/app.css') }}" as="style">
+            <link rel="preload" href="{{ asset('build/assets/app.js') }}" as="script">
+        @endproduction
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Scripts -->
+        <!-- Styles -->
+        @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        
+        <!-- Fallback if Vite fails -->
+        @if(!app()->environment('local'))
+            <link rel="stylesheet" href="{{ asset('build/assets/app.css') }}">
+            <script src="{{ asset('build/assets/app.js') }}" defer></script>
+        @endif
 
         <!-- Add Trix CSS -->
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.css">
@@ -24,7 +35,7 @@
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <a href="{{ route('home') }}">
-                                    {{ config('app.name', 'Laravel') }}
+                                    {{ config('app.name', 'Power of Attorney') }}
                                 </a>
                             </div>
 
