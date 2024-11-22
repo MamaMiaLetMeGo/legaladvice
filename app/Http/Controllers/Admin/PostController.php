@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -83,9 +84,12 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        $this->authorize('update', $post);
-        $categories = Category::orderBy('name')->get();
-        return view('admin.posts.edit', compact('post', 'categories'));
+        if (! Gate::allows('update', $post)) {
+            abort(403);
+    }
+    
+    $categories = Category::orderBy('name')->get();
+    return view('admin.posts.edit', compact('post', 'categories'));
     }
 
     public function update(Request $request, Post $post)
