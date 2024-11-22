@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -49,8 +50,9 @@ class PostController extends Controller
      */
     public function create()
     {
-        $categories = Category::all();
-        return view('admin.posts.create', compact('categories'));
+        $categories = Category::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
+        return view('admin.posts.create', compact('categories', 'users'));
     }
 
     /**
@@ -58,64 +60,80 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required',
-            'slug' => 'required|unique:posts',
-            'body_content' => 'required',
-            'categories' => 'required|array',
-            'categories.*' => 'exists:categories,id',
-        ]);
+    $validated = $request->validate([
+        'title' => 'required',
+        'slug' => 'required|unique:posts',
+        'body_content' => 'required',
+        'categories' => 'required|array',
+        'categories.*' => 'exists:categories,id',
+        'author_id' => 'required|exists:users,id'
+    ]);
 
-        $post = Post::create([
-            'title' => $validated['title'],
-            'slug' => $validated['slug'],
-            'body_content' => $validated['body_content'],
-            'author_id' => auth()->id(),
-        ]);
+    $post = Post::create([
+        'title' => $validated['title'],
+        'slug' => $validated['slug'],
+        'body_content' => $validated['body_content'],
+        'author_id' => $validated['author_id'],
+        'breadcrumb' => $request->breadcrumb,
+        'featured_image' => $request->featured_image,
+        'video_url' => $request->video_url,
+        'published_date' => $request->published_date,
+        'status' => 'draft',
+    ]);
 
-        $post->categories()->attach($request->categories);
+    $post->categories()->attach($request->categories);
 
-        return redirect()->route('admin.posts.index')
-            ->with('success', 'Post created successfully.');
+    return redirect()->route('admin.posts.index')
+        ->with('success', 'Post created successfully.');
     }
 
     /**
      * Show the form for editing the specified post.
      */
     public function edit(Post $post)
-    {
-        if (! Gate::allows('update', $post)) {
-            abort(403);
-    }
-    
-    $categories = Category::orderBy('name')->get();
-    return view('admin.posts.edit', compact('post', 'categories'));
-    }
+        {
+            if (! Gate::allows('update', $post)) {
+                abort(403);
+        }
+        
+        $categories = Category::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
+        return view('admin.posts.edit', compact('post', 'categories', 'users'));
+        }
 
     public function update(Request $request, Post $post)
     {
-        $this->authorize('update', $post);
-        
-        $request->validate([
+        if (! Gate::allows('update', $post)) {
+            abort(403);
+        }
+    
+        // If not admin, force author_id to be current user
+        if (!auth()->user()->is_admin) {
+            $request->merge(['author_id' => auth()->id()]);
+        }
+            
+        $validated = $request->validate([
             'title' => 'required',
             'body_content' => 'required',
             'slug' => 'required|unique:posts,slug,' . $post->id,
+            'author_id' => 'required|exists:users,id'
         ]);
-
+    
         $post->update([
-            'title' => $request->title,
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'body_content' => $validated['body_content'],
+            'author_id' => $validated['author_id'],
             'breadcrumb' => $request->breadcrumb,
-            'body_content' => $request->body_content,
             'featured_image' => $request->featured_image,
-            'slug' => $request->slug,
             'video_url' => $request->video_url,
             'published_date' => $request->published_date,
         ]);
-
+    
         if ($request->has('categories')) {
             $post->categories()->sync($request->categories);
         }
-
+    
         return redirect()
             ->route('admin.posts.index')
             ->with('success', 'Post updated successfully');

@@ -53,6 +53,43 @@
                     @enderror
                 </div>
 
+                {{-- Author Selection --}}
+                <div class="sm:col-span-2">
+                    <label for="author_id" class="block text-sm font-medium text-gray-700">
+                        Author
+                    </label>
+                    <div class="mt-1">
+                        @if(auth()->user()->is_admin)
+                            <select 
+                                name="author_id" 
+                                id="author_id"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                required
+                            >
+                                @foreach($users as $user)
+                                    <option 
+                                        value="{{ $user->id }}" 
+                                        {{ old('author_id', $post->author_id) === $user->id ? 'selected' : '' }}
+                                    >
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input 
+                                type="text" 
+                                value="{{ auth()->user()->name }}" 
+                                class="block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm" 
+                                disabled
+                            >
+                            <input type="hidden" name="author_id" value="{{ auth()->id() }}">
+                        @endif
+                    </div>
+                    @error('author_id')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Slug --}}
                 <div class="sm:col-span-2">
                     <label for="slug" class="block text-sm font-medium text-gray-700">
