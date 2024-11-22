@@ -60,31 +60,38 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-    $validated = $request->validate([
-        'title' => 'required',
-        'slug' => 'required|unique:posts',
-        'body_content' => 'required',
-        'categories' => 'required|array',
-        'categories.*' => 'exists:categories,id',
-        'author_id' => 'required|exists:users,id'
-    ]);
+        $validated = $request->validate([
+            'title' => 'required',
+            'slug' => 'required|unique:posts',
+            'body_content' => 'required',
+            'categories' => 'required|array',
+            'categories.*' => 'exists:categories,id',
+            'author_id' => 'required|exists:users,id',
+            'featured_image' => 'nullable|image|max:2048' // validate image upload
+        ]);
 
-    $post = Post::create([
-        'title' => $validated['title'],
-        'slug' => $validated['slug'],
-        'body_content' => $validated['body_content'],
-        'author_id' => $validated['author_id'],
-        'breadcrumb' => $request->breadcrumb,
-        'featured_image' => $request->featured_image,
-        'video_url' => $request->video_url,
-        'published_date' => $request->published_date,
-        'status' => 'draft',
-    ]);
+        // Handle featured image upload
+        $featured_image = null;
+        if ($request->hasFile('featured_image')) {
+            $featured_image = $request->file('featured_image')->store('featured-images', 'public');
+        }
 
-    $post->categories()->attach($request->categories);
+        $post = Post::create([
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'body_content' => $validated['body_content'],
+            'author_id' => $validated['author_id'],
+            'breadcrumb' => $request->breadcrumb,
+            'featured_image' => $featured_image,  // Store the path
+            'video_url' => $request->video_url,
+            'published_date' => $request->published_date,
+            'status' => 'draft',
+        ]);
 
-    return redirect()->route('admin.posts.index')
-        ->with('success', 'Post created successfully.');
+        $post->categories()->attach($request->categories);
+
+        return redirect()->route('admin.posts.index')
+            ->with('success', 'Post created successfully.');
     }
 
     /**
