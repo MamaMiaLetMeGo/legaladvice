@@ -7,12 +7,15 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
 
 class AuthorController extends Controller
 {
-    public function __construct()
+    protected function middleware(): array
     {
-        $this->middleware('auth')->except(['show', 'index']);
+        return [
+            'auth' => ['except' => ['show', 'index']]
+        ];
     }
 
     public function index(): View
@@ -25,16 +28,16 @@ class AuthorController extends Controller
         return view('authors.index', compact('authors'));
     }
 
-    public function show(User $author): View
+    public function show(User $user): View
     {
-        $posts = $author->publishedPosts()
+        $posts = $user->publishedPosts()
             ->with('categories')
             ->orderByDesc('published_date')
             ->paginate(10);
 
-        $stats = $author->getPostsStatistics();
+        $stats = $user->getPostsStatistics();
 
-        return view('authors.show', compact('author', 'posts', 'stats'));
+        return view('authors.show', compact('user', 'posts', 'stats'));
     }
 
     public function edit(): View

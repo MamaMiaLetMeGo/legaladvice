@@ -9,6 +9,7 @@ use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryViewController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\AuthorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,9 @@ Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.s
 Route::get('/categories', [CategoryViewController::class, 'index'])->name('categories.index');
 Route::get('/categories/search', [CategoryViewController::class, 'search'])->name('categories.search');
 Route::get('/categories/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
+
+// Public author routes 
+Route::get('/author/{user:id}', [AuthorController::class, 'show'])->name('author.show');
 
 // Admin routes
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

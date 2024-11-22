@@ -27,7 +27,7 @@ class Post extends Model
     ];
 
     protected $casts = [
-        'published_date' => 'date',
+        'published_date' => 'datetime',
     ];
 
     protected static function boot()

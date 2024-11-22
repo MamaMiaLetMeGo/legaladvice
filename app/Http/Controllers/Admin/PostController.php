@@ -83,15 +83,15 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
+        $this->authorize('update', $post);
         $categories = Category::orderBy('name')->get();
         return view('admin.posts.edit', compact('post', 'categories'));
     }
 
-    /**
-     * Update the specified post in storage.
-     */
     public function update(Request $request, Post $post)
     {
+        $this->authorize('update', $post);
+        
         $request->validate([
             'title' => 'required',
             'body_content' => 'required',

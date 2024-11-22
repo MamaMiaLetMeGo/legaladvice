@@ -51,6 +51,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'social_links' => 'array',    // For JSON storage of social media links
+            'is_admin' => 'boolean',
         ];
     }
 
