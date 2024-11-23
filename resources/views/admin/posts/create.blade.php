@@ -141,8 +141,50 @@
             </div>
 
             <div class="mb-6">
-                <label for="video_url" class="block text-sm font-medium text-gray-700">Video URL</label>
-                <input type="text" name="video_url" id="video_url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ old('video_url') }}">
+                <label for="video" class="block text-sm font-medium text-gray-700">Video</label>
+                <div class="mt-1 flex items-center">
+                    <div class="video-preview hidden relative">
+                        <video 
+                            width="320" 
+                            height="240" 
+                            controls 
+                            class="rounded-lg"
+                        >
+                            <source src="" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <button 
+                            type="button"
+                            onclick="removeVideo()"
+                            class="absolute -top-2 -right-2 rounded-full bg-red-100 p-1 text-red-600 hover:bg-red-200"
+                        >
+                            <span class="sr-only">Remove Video</span>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <input 
+                        type="file" 
+                        name="video" 
+                        id="video" 
+                        accept="video/mp4,video/quicktime,video/*"
+                        class="hidden"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="document.getElementById('video').click()"
+                        class="ml-5 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Select Video
+                    </button>
+                </div>
+                @error('video')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6">
@@ -255,6 +297,17 @@
             preview.querySelector('img').src = '';
         }
 
+        function removeVideo() {
+            const fileInput = document.getElementById('video');
+            const preview = document.querySelector('.video-preview');
+            const video = preview.querySelector('video source');
+            
+            fileInput.value = '';
+            preview.classList.add('hidden');
+            video.src = '';
+            video.parentElement.load();
+        }
+
         // Add Trix customization before DOMContentLoaded
         addEventListener('trix-initialize', function(event) {
             const toolbar = event.target.toolbarElement;
@@ -318,6 +371,19 @@
                     };
                     
                     reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            document.getElementById('video').addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    const url = URL.createObjectURL(file);
+                    const preview = document.querySelector('.video-preview');
+                    const video = preview.querySelector('video source');
+                    
+                    video.src = url;
+                    video.parentElement.load(); // Reload video element
+                    preview.classList.remove('hidden');
                 }
             });
         });
