@@ -147,7 +147,13 @@
 
             <div class="mb-6">
                 <label for="published_date" class="block text-sm font-medium text-gray-700">Published Date</label>
-                <input type="date" name="published_date" id="published_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ old('published_date') }}">
+                <input 
+                    type="date" 
+                    name="published_date" 
+                    id="published_date" 
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                    value="{{ old('published_date', now()->format('Y-m-d')) }}"
+                >
             </div>
 
             <div class="flex justify-end space-x-4">
