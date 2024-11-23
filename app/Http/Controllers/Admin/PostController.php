@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -55,6 +56,15 @@ class PostController extends Controller
         return view('admin.posts.create', compact('categories', 'users'));
     }
 
+    public function show(Post $post)
+    {
+        if (! Gate::allows('update', $post)) {
+            abort(403);
+        }
+
+        return view('posts.show', compact('post'));
+    }
+
     /**
      * Store a newly created post in storage.
      */
@@ -83,7 +93,7 @@ class PostController extends Controller
             'author_id' => $validated['author_id'],
             'breadcrumb' => $request->breadcrumb,
             'featured_image' => $featured_image,  // Store the path
-            'video_url' => $request->video_url,
+            'video' => $request->video,
             'published_date' => $request->published_date,
             'status' => 'draft',
         ]);
@@ -108,43 +118,57 @@ class PostController extends Controller
         return view('admin.posts.edit', compact('post', 'categories', 'users'));
         }
 
-    public function update(Request $request, Post $post)
-    {
-        if (! Gate::allows('update', $post)) {
-            abort(403);
-        }
-    
-        // If not admin, force author_id to be current user
-        if (!auth()->user()->is_admin) {
-            $request->merge(['author_id' => auth()->id()]);
-        }
+        public function update(Request $request, Post $post)
+        {
+            if (! Gate::allows('update', $post)) {
+                abort(403);
+            }
             
-        $validated = $request->validate([
-            'title' => 'required',
-            'body_content' => 'required',
-            'slug' => 'required|unique:posts,slug,' . $post->id,
-            'author_id' => 'required|exists:users,id'
-        ]);
-    
-        $post->update([
-            'title' => $validated['title'],
-            'slug' => $validated['slug'],
-            'body_content' => $validated['body_content'],
-            'author_id' => $validated['author_id'],
-            'breadcrumb' => $request->breadcrumb,
-            'featured_image' => $request->featured_image,
-            'video_url' => $request->video_url,
-            'published_date' => $request->published_date,
-        ]);
-    
-        if ($request->has('categories')) {
-            $post->categories()->sync($request->categories);
+            $validated = $request->validate([
+                'title' => 'required',
+                'body_content' => 'required',
+                'slug' => 'required|unique:posts,slug,' . $post->id,
+                'author_id' => 'required|exists:users,id',
+                'featured_image' => 'nullable|image|max:2048'
+            ]);
+
+            // Handle image update
+            $featured_image = $post->featured_image; // Keep existing image by default
+
+            if ($request->boolean('remove_image')) {
+                // Remove existing image if it exists
+                if ($featured_image && Storage::disk('public')->exists($featured_image)) {
+                    Storage::disk('public')->delete($featured_image);
+                }
+                $featured_image = null;
+            } elseif ($request->hasFile('featured_image')) {
+                // Remove old image if it exists
+                if ($featured_image && Storage::disk('public')->exists($featured_image)) {
+                    Storage::disk('public')->delete($featured_image);
+                }
+                // Store new image
+                $featured_image = $request->file('featured_image')->store('featured-images', 'public');
+            }
+
+            $post->update([
+                'title' => $validated['title'],
+                'slug' => $validated['slug'],
+                'body_content' => $validated['body_content'],
+                'author_id' => $validated['author_id'],
+                'breadcrumb' => $request->breadcrumb,
+                'featured_image' => $featured_image,
+                'video' => $request->video,
+                'published_date' => $request->published_date,
+            ]);
+
+            if ($request->has('categories')) {
+                $post->categories()->sync($request->categories);
+            }
+
+            return redirect()
+                ->route('admin.posts.index')
+                ->with('success', 'Post updated successfully');
         }
-    
-        return redirect()
-            ->route('admin.posts.index')
-            ->with('success', 'Post updated successfully');
-    }
 
     /**
      * Remove the specified post from storage.

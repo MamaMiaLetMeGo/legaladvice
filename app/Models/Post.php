@@ -21,7 +21,7 @@ class Post extends Model
         'body_content',
         'featured_image',
         'slug',
-        'video_url',
+        'video',
         'status',
         'published_date'
     ];

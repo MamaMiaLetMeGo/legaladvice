@@ -245,6 +245,59 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.js"></script>
     
     <script>
+        // Move removeImage function outside to make it globally accessible
+        function removeImage() {
+            const fileInput = document.getElementById('featured_image');
+            const preview = document.querySelector('.featured-image-preview');
+            
+            fileInput.value = '';
+            preview.classList.add('hidden');
+            preview.querySelector('img').src = '';
+        }
+
+        // Add Trix customization before DOMContentLoaded
+        addEventListener('trix-initialize', function(event) {
+            const toolbar = event.target.toolbarElement;
+            const buttonGroups = toolbar.querySelector(".trix-button-groups");
+            
+            // Add custom buttons
+            const customButtons = `
+                <div class="trix-button-group">
+                    <button type="button" class="trix-button" data-trix-attribute="heading1" title="Heading 1">H1</button>
+                    <button type="button" class="trix-button" data-trix-attribute="heading2" title="Heading 2">H2</button>
+                    <button type="button" class="trix-button" data-trix-attribute="heading3" title="Heading 3">H3</button>
+                </div>
+                <div class="trix-button-group">
+                    <button type="button" class="trix-button" data-trix-attribute="code" title="Code">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button" class="trix-button" data-trix-attribute="highlight" title="Highlight">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            buttonGroups.insertAdjacentHTML('beforeend', customButtons);
+
+            // Configure custom attributes
+            const editor = event.target.editor;
+            editor.composition.addAttributeForTag("h1", "heading1");
+            editor.composition.addAttributeForTag("h2", "heading2");
+            editor.composition.addAttributeForTag("h3", "heading3");
+            editor.composition.addAttributeForTag("span", "highlight");
+        });
+
+        // Prevent file uploads in Trix
+        addEventListener('trix-file-accept', function(e) {
+            e.preventDefault();
+        });
+
+        // DOM ready handlers
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Tom Select
             new TomSelect('#categories', {
@@ -266,58 +319,6 @@
                     
                     reader.readAsDataURL(e.target.files[0]);
                 }
-            });
-
-            // Remove image
-            function removeImage() {
-                const fileInput = document.getElementById('featured_image');
-                const preview = document.querySelector('.featured-image-preview');
-                
-                fileInput.value = '';
-                preview.classList.add('hidden');
-                preview.querySelector('img').src = '';
-            }
-
-            // Trix Editor Customization
-            window.addEventListener('trix-initialize', function(event) {
-                const toolbar = event.target.toolbarElement;
-                const buttonGroups = toolbar.querySelector(".trix-button-groups");
-                
-                // Add custom buttons
-                const customButtons = `
-                    <div class="trix-button-group">
-                        <button type="button" class="trix-button" data-trix-attribute="heading1" title="Heading 1">H1</button>
-                        <button type="button" class="trix-button" data-trix-attribute="heading2" title="Heading 2">H2</button>
-                        <button type="button" class="trix-button" data-trix-attribute="heading3" title="Heading 3">H3</button>
-                    </div>
-                    <div class="trix-button-group">
-                        <button type="button" class="trix-button" data-trix-attribute="code" title="Code">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="16 18 22 12 16 6"></polyline>
-                                <polyline points="8 6 2 12 8 18"></polyline>
-                            </svg>
-                        </button>
-                        <button type="button" class="trix-button" data-trix-attribute="highlight" title="Highlight">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                
-                buttonGroups.insertAdjacentHTML('beforeend', customButtons);
-
-                // Configure custom attributes
-                const editor = event.target.editor;
-                editor.composition.addAttributeForTag("h1", "heading1");
-                editor.composition.addAttributeForTag("h2", "heading2");
-                editor.composition.addAttributeForTag("h3", "heading3");
-                editor.composition.addAttributeForTag("span", "highlight");
-            });
-
-            // Prevent file uploads
-            document.addEventListener('trix-file-accept', function(e) {
-                e.preventDefault();
             });
         });
     </script>
