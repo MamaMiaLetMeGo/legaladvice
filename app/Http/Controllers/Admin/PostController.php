@@ -56,14 +56,6 @@ class PostController extends Controller
         return view('admin.posts.create', compact('categories', 'users'));
     }
 
-    public function show(Post $post)
-    {
-        if (! Gate::allows('update', $post)) {
-            abort(403);
-        }
-
-        return view('posts.show', compact('post'));
-    }
 
     /**
      * Store a newly created post in storage.
