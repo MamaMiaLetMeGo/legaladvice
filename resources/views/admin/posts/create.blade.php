@@ -276,6 +276,27 @@
         
         tinymce.init({
         selector: 'textarea#basic-example',
+        content_style: `
+            /* This will be applied in the editor */
+            body {
+                font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+                line-height: 1.5;
+                font-size: 16px;
+                color: #111827;
+            }
+            h1 { font-size: 2.25rem; font-weight: bold; margin: 1.5rem 0; }
+            h2 { font-size: 1.875rem; font-weight: bold; margin: 1.25rem 0; }
+            h3 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; }
+            p { margin-bottom: 1rem; }
+            ul { list-style-type: disc; padding-left: 2rem; margin-bottom: 1rem; }
+            ol { list-style-type: decimal; padding-left: 2rem; margin-bottom: 1rem; }
+            blockquote { border-left: 4px solid #e5e7eb; padding-left: 1rem; font-style: italic; margin: 1rem 0; }
+            code { background-color: #f3f4f6; padding: 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; }
+            .highlight { background-color: #fef3c7; padding: 0 0.25rem; border-radius: 0.25rem; }
+        `,
+        formats: {
+            highlight: { inline: 'span', classes: 'highlight' }
+        },
         height: 500,
         plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',

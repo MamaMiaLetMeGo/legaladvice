@@ -8,6 +8,10 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
     ],
+    safelist: [
+        'tinymce-content',
+        'highlight'
+    ],
 
     theme: {
         extend: {

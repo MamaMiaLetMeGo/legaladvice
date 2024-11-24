@@ -10,7 +10,7 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <article class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <article class="bg-white rounded-lg shadow-lg overflow-hidden tinymce-content">
         {{-- Featured Image --}}
         @if($post->featured_image)
             <div class="w-full h-96 relative">

@@ -1,3 +1,86 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* TinyMCE Content Styling */
+.tinymce-content {
+    @apply max-w-none text-gray-900;
+}
+
+/* Headings */
+.tinymce-content h1 {
+    @apply text-4xl font-bold mb-6 mt-8;
+}
+
+.tinymce-content h2 {
+    @apply text-3xl font-bold mb-5 mt-7;
+}
+
+.tinymce-content h3 {
+    @apply text-2xl font-bold mb-4 mt-6;
+}
+
+/* Paragraphs and spacing */
+.tinymce-content p {
+    @apply mb-4 leading-relaxed;
+}
+
+/* Lists */
+.tinymce-content ul {
+    @apply list-disc pl-8 mb-4;
+}
+
+.tinymce-content ol {
+    @apply list-decimal pl-8 mb-4;
+}
+
+.tinymce-content li {
+    @apply mb-2;
+}
+
+/* Links */
+.tinymce-content a {
+    @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+/* Blockquotes */
+.tinymce-content blockquote {
+    @apply pl-4 border-l-4 border-gray-300 italic my-4;
+}
+
+/* Code blocks */
+.tinymce-content pre {
+    @apply bg-gray-100 p-4 rounded-lg mb-4 overflow-x-auto;
+}
+
+.tinymce-content code {
+    @apply bg-gray-100 px-1 py-0.5 rounded text-sm;
+}
+
+/* Images */
+.tinymce-content img {
+    @apply max-w-full h-auto rounded-lg my-4;
+}
+
+/* Tables */
+.tinymce-content table {
+    @apply w-full border-collapse mb-4;
+}
+
+.tinymce-content th {
+    @apply bg-gray-100 border border-gray-300 px-4 py-2 text-left;
+}
+
+.tinymce-content td {
+    @apply border border-gray-300 px-4 py-2;
+}
+
+/* Horizontal rule */
+.tinymce-content hr {
+    @apply my-8 border-t border-gray-300;
+}
+
+/* Custom highlight class */
+.tinymce-content .highlight {
+    @apply bg-yellow-100 px-1 rounded;
+}
