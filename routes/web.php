@@ -54,6 +54,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
    
    // Posts Management
    Route::resource('posts', AdminPostController::class);
+   Route::post('/upload-video', [AdminPostController::class, 'videoUpload'])->name('video.upload');
+   Route::post('/upload-image', [AdminPostController::class, 'uploadImages'])->name('image.upload');
+
+
 
    // Category Management
    Route::resource('categories', AdminCategoryController::class);

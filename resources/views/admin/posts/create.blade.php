@@ -68,12 +68,8 @@
             <div class="mb-6">
                 <label for="body_content" class="block text-sm font-medium text-gray-700">Content</label>
                 <div class="mt-1">
-                    <input id="body_content" type="hidden" name="body_content" value="{{ old('body_content') }}">
-                    <trix-editor 
-                        input="body_content"
-                        class="trix-content prose max-w-full block w-full border-gray-300 rounded-md shadow-sm"
-                        style="min-height: 20rem;">
-                    </trix-editor>
+                    <textarea name="body_content" id="basic-example" cols="30" rows="10">{{ old('body_content') }}</textarea>
+                   
                 </div>
                 @error('body_content')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -209,82 +205,12 @@
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.css">
-    
-    <style>
-        trix-editor {
-            @apply block w-full rounded-md border-gray-300;
-            min-height: 20rem;
-        }
-        
-        trix-toolbar {
-            @apply border border-gray-300 rounded-t-md bg-gray-50 p-2;
-        }
-        
-        trix-toolbar .trix-button-group {
-            @apply mr-2;
-        }
-        
-        trix-toolbar .trix-button {
-            @apply border border-gray-300 rounded p-1 bg-white hover:bg-gray-100;
-        }
-        
-        trix-toolbar .trix-button.trix-active {
-            @apply bg-blue-50 border-blue-500;
-        }
-        
-        .trix-content {
-            @apply prose max-w-none;
-        }
-        
-        .trix-content ul {
-            @apply list-disc pl-4;
-        }
-        
-        .trix-content ol {
-            @apply list-decimal pl-4;
-        }
-
-        /* New styles for custom buttons */
-        trix-toolbar .trix-button[data-trix-attribute="heading1"],
-        trix-toolbar .trix-button[data-trix-attribute="heading2"],
-        trix-toolbar .trix-button[data-trix-attribute="heading3"] {
-            font-family: serif;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        trix-toolbar .trix-button[data-trix-attribute="highlight"].trix-active {
-            background-color: yellow;
-        }
-
-        trix-editor h1 {
-            font-size: 2em;
-            margin-top: 1em;
-            margin-bottom: 0.5em;
-        }
-
-        trix-editor h2 {
-            font-size: 1.5em;
-            margin-top: 0.83em;
-            margin-bottom: 0.42em;
-        }
-
-        trix-editor h3 {
-            font-size: 1.17em;
-            margin-top: 0.67em;
-            margin-bottom: 0.33em;
-        }
-
-        trix-editor [data-trix-attribute="highlight"] {
-            background-color: yellow;
-        }
-    </style>
 @endpush
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.js"></script>
+    <script src="https://cdn.tiny.cloud/1/ohrfrapuhu20w9tbmhnitg6kvecj2vouenborprjzguexqop/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/@tinymce/tinymce-jquery@2/dist/tinymce-jquery.min.js"></script> --}}
     
     <script>
         // Move removeImage function outside to make it globally accessible
@@ -307,48 +233,7 @@
             video.src = '';
             video.parentElement.load();
         }
-
-        // Add Trix customization before DOMContentLoaded
-        addEventListener('trix-initialize', function(event) {
-            const toolbar = event.target.toolbarElement;
-            const buttonGroups = toolbar.querySelector(".trix-button-groups");
-            
-            // Add custom buttons
-            const customButtons = `
-                <div class="trix-button-group">
-                    <button type="button" class="trix-button" data-trix-attribute="heading1" title="Heading 1">H1</button>
-                    <button type="button" class="trix-button" data-trix-attribute="heading2" title="Heading 2">H2</button>
-                    <button type="button" class="trix-button" data-trix-attribute="heading3" title="Heading 3">H3</button>
-                </div>
-                <div class="trix-button-group">
-                    <button type="button" class="trix-button" data-trix-attribute="code" title="Code">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="16 18 22 12 16 6"></polyline>
-                            <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg>
-                    </button>
-                    <button type="button" class="trix-button" data-trix-attribute="highlight" title="Highlight">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                        </svg>
-                    </button>
-                </div>
-            `;
-            
-            buttonGroups.insertAdjacentHTML('beforeend', customButtons);
-
-            // Configure custom attributes
-            const editor = event.target.editor;
-            editor.composition.addAttributeForTag("h1", "heading1");
-            editor.composition.addAttributeForTag("h2", "heading2");
-            editor.composition.addAttributeForTag("h3", "heading3");
-            editor.composition.addAttributeForTag("span", "highlight");
-        });
-
-        // Prevent file uploads in Trix
-        addEventListener('trix-file-accept', function(e) {
-            e.preventDefault();
-        });
+    
 
         // DOM ready handlers
         document.addEventListener('DOMContentLoaded', function() {
@@ -387,5 +272,104 @@
                 }
             });
         });
+
+        
+        tinymce.init({
+        selector: 'textarea#basic-example',
+        height: 500,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+        'bold italic backcolor | alignleft aligncenter ' +
+        'alignright alignjustify | bullist numlist outdent indent | ' +
+        'removeformat | image media | help',
+        media_live_embeds: true,
+        automatic_uploads: true,
+
+        // Image Upload Handler
+        images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/admin/upload-image'); // Laravel endpoint
+
+    // Include CSRF Token
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    xhr.setRequestHeader('X-CSRF-Token', token);
+
+    // Monitor upload progress
+    xhr.upload.onprogress = (e) => {
+      progress((e.loaded / e.total) * 100);
+    };
+
+    // Handle the server response
+    xhr.onload = () => {
+      if (xhr.status !== 200) {
+        reject({ message: `HTTP Error: ${xhr.status}`, remove: true });
+        return;
+      }
+
+      const json = JSON.parse(xhr.responseText);
+      if (!json || typeof json.location !== 'string') {
+        reject('Invalid JSON response: ' + xhr.responseText);
+        return;
+      }
+
+      resolve(json.location); // Pass the image URL back to TinyMCE
+    };
+
+    // Handle errors
+    xhr.onerror = () => {
+      reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
+    };
+
+    // Prepare the file upload
+    const formData = new FormData();
+    formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+    // Send the upload request
+    xhr.send(formData);
+  }),
+
+        // File Picker for Video Uploads
+        file_picker_types: 'media',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'media') {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'video/*');
+
+            input.onchange = function() {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/admin/upload-video', true);
+
+                // Set CSRF Token Header
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                xhr.setRequestHeader('X-CSRF-Token', token);
+
+                xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const json = JSON.parse(xhr.responseText);
+                    callback(json.location, { title: file.name });
+                } else {
+                    alert('Failed to upload video: ' + xhr.statusText);
+                }
+                };
+
+                xhr.send(formData);
+            };
+
+            input.click();
+            }
+        },
+
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+        });
+
     </script>
 @endpush

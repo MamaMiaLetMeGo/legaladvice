@@ -77,6 +77,10 @@ class PostController extends Controller
         if ($request->hasFile('featured_image')) {
             $featured_image = $request->file('featured_image')->store('featured-images', 'public');
         }
+        $video = null;
+        if ($request->hasFile('video')) {
+            $video = $request->file('video')->store('videos', 'public');
+        }
 
         $post = Post::create([
             'title' => $validated['title'],
@@ -85,7 +89,7 @@ class PostController extends Controller
             'author_id' => $validated['author_id'],
             'breadcrumb' => $request->breadcrumb,
             'featured_image' => $featured_image,  // Store the path
-            'video' => $request->video,
+            'video' => $video,
             'published_date' => $request->published_date,
             'status' => 'draft',
         ]);
@@ -142,6 +146,20 @@ class PostController extends Controller
                 $featured_image = $request->file('featured_image')->store('featured-images', 'public');
             }
 
+            $video = $post->video;
+            if ($request->hasFile('video')) {
+                // Remove the existing video
+                if ($post->video_path) {
+                    $existingVideoPath = storage_path('app/public/' . $post->video_path);
+        
+                    if (file_exists($existingVideoPath)) {
+                        unlink($existingVideoPath);
+                    }
+                }
+        
+                // Upload the new video
+                $video = $request->file('video')->store('videos', 'public');
+            }
             $post->update([
                 'title' => $validated['title'],
                 'slug' => $validated['slug'],
@@ -149,7 +167,7 @@ class PostController extends Controller
                 'author_id' => $validated['author_id'],
                 'breadcrumb' => $request->breadcrumb,
                 'featured_image' => $featured_image,
-                'video' => $request->video,
+                'video' => $video,
                 'published_date' => $request->published_date,
             ]);
 
@@ -203,4 +221,37 @@ class PostController extends Controller
 
         return back()->with('success', 'Post archived successfully.');
     }
+
+    public function videoUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:mp4,mov,avi,wmv|max:51200' // 50MB max size
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->store('videos', 'public');
+
+            return response()->json([
+                'location' => asset('storage/' . $path) // URL for the uploaded video
+            ]);
+        }
+
+        return response()->json(['error' => 'No file uploaded'], 400);
+    }
+
+    public function uploadImages(Request $request)
+    {
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->store('uploads', 'public');
+
+            return response()->json([
+                'location' => asset('storage/' . $path) // URL for the uploaded image
+            ]);
+        }
+
+        return response()->json(['error' => 'No file uploaded'], 400);
+    }
+
 }
