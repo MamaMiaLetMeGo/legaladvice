@@ -32,19 +32,6 @@
                 </p>
 
                 <div class="grid md:grid-cols-2 gap-8 mb-12">
-                    {{-- Sailboat Tracker Section --}}
-                    <div class="bg-blue-50 p-6 rounded-lg">
-                        <h2 class="text-xl font-semibold text-blue-900 mb-4">
-                            🚢 Follow My Sailing Adventure
-                        </h2>
-                        <p class="text-blue-800 mb-4">
-                            Want to know where I'm sailing? Get real-time updates about my location and journey.
-                        </p>
-                        <a href="{{ route('location.show') }}" 
-                           class="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
-                            Track My Journey
-                        </a>
-                    </div>
 
                     {{-- Newsletter Section --}}
                     <div class="bg-green-50 p-6 rounded-lg">

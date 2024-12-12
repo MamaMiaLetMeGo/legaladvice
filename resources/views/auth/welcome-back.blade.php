@@ -15,17 +15,6 @@
                             <div class="font-medium">Your Profile</div>
                             <div class="text-sm text-gray-600">View and edit your profile settings</div>
                         </a>
-                        
-                        <a href="{{ route('location.show') }}" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100">
-                            <div class="font-medium">Movement Notifications</div>
-                            <div class="text-sm text-gray-600">
-                                @if($hasLocationNotifications)
-                                    Manage your notification settings
-                                @else
-                                    Set up movement notifications
-                                @endif
-                            </div>
-                        </a>
 
                         <a href="{{ route('authors.index') }}" class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100">
                             <div class="font-medium">Browse Authors</div>
