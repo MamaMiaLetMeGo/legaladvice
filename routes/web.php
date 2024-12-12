@@ -56,15 +56,6 @@ Route::middleware('web')->group(function () {
 
     // Protected routes that require 2FA
     Route::middleware(['auth', 'two-factor'])->group(function () {
-        // Move admin routes inside this group
-        Route::prefix('admin')->name('admin.')->group(function () {
-            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-            // Update to use the correct namespace for CategoryController
-            Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
-            Route::resource('posts', \App\Http\Controllers\Admin\PostController::class);
-            // ... any other admin routes
-        });
-
         // Existing protected routes
         Route::get('/welcome', [WelcomeController::class, 'newUser'])->name('welcome.new-user');
         Route::get('/welcome-back', [WelcomeBackController::class, 'index'])->name('welcome.back');
