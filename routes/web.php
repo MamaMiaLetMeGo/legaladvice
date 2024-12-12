@@ -36,16 +36,13 @@ Route::middleware('web')->group(function () {
     Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
     Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
     Route::get('/categories', [CategoryViewController::class, 'index'])->name('categories.index');
-
-    // Location routes
-    Route::prefix('location')->name('location.')->group(function () {
-        Route::get('/', [LocationController::class, 'show'])->name('show');
-        Route::post('/subscribe', [LocationController::class, 'subscribe'])->name('subscribe');
-        Route::get('/unsubscribe/{email}', [LocationController::class, 'unsubscribe'])->name('unsubscribe');
-    });
-
-    // Webhook routes
-    Route::post('/webhooks/garmin', [LocationController::class, 'handleGarminWebhook'])->name('webhook.garmin');
+    Route::get('/legal-expert', function () {
+        return view('legal-expert');
+    })->name('legal-expert');
+    
+    Route::get('/pricing', function () {
+        return view('pricing');
+    })->name('pricing');
 
     // 2FA verification routes (without 2FA middleware)
     Route::middleware(['auth'])->group(function () {
@@ -62,9 +59,9 @@ Route::middleware('web')->group(function () {
         // Move admin routes inside this group
         Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-            // Add other admin routes here
-            Route::resource('categories', CategoryController::class);
-            Route::resource('posts', PostController::class);
+            // Update to use the correct namespace for CategoryController
+            Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+            Route::resource('posts', \App\Http\Controllers\Admin\PostController::class);
             // ... any other admin routes
         });
 

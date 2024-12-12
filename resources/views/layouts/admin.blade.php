@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} Admin - @yield('title', 'Dashboard')</title>
+    <title>{{ config('app.name', 'LegalAdvice.ai') }} Admin - @yield('title', 'Dashboard')</title>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
