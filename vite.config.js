@@ -8,17 +8,4 @@ export default defineConfig({
             refresh: true,
         }),
     ],
-    build: {
-        rollupOptions: {
-            external: ['alpinejs'],
-            output: {
-                globals: {
-                    alpinejs: 'Alpine'
-                }
-            }
-        }
-    },
-    optimizeDeps: {
-        exclude: ['alpinejs']
-    }
 });
