@@ -34,59 +34,54 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        try {
-            \Log::info('Starting sendMessage with request:', $request->all());
+        \Log::info('Starting sendMessage with request:', $request->all());
 
+        try {
             $validated = $request->validate([
                 'content' => 'required|string|max:1000',
-                'conversation_id' => 'nullable|exists:conversations,id',
-                'new_conversation' => 'required|boolean'
+                'new_conversation' => 'boolean',
+                'conversation_id' => 'nullable|exists:conversations,id'
             ]);
 
-            DB::beginTransaction();
-
-            if ($request->new_conversation) {
-                $conversation = Conversation::create([
-                    'user_id' => auth()->check() ? auth()->id() : null,
-                    'status' => 'pending',
-                    'ip_address' => $request->ip(),
-                    'last_message_at' => now()
-                ]);
+            // Try to get existing conversation ID from request
+            $conversationId = $request->input('conversation_id');
+            
+            if ($conversationId) {
+                $conversation = Conversation::findOrFail($conversationId);
             } else {
-                $conversation = Conversation::findOrFail($request->conversation_id);
-                $conversation->update(['last_message_at' => now()]);
+                // Create new conversation
+                $conversation = Conversation::create([
+                    'status' => 'pending',
+                    'user_id' => auth()->id(),
+                    'ip_address' => $request->ip(),
+                    'last_message_at' => now(),
+                ]);
             }
 
+            // Create the message
             $message = $conversation->messages()->create([
-                'user_id' => auth()->check() ? auth()->id() : null,
                 'content' => $request->content,
-                'ip_address' => $request->ip()
+                'user_id' => auth()->id(),
+                'ip_address' => $request->ip(),
             ]);
 
-            DB::commit();
-
-            $message->load('user');
-            $conversation->load('lawyer');
-
-            broadcast(new NewChatMessage($message))->toOthers();
+            // Broadcast the new message
+            broadcast(new NewChatMessage($message->load('user')));
 
             return response()->json([
-                'message' => $message,
-                'conversation' => $conversation
+                'success' => true,
+                'conversation_id' => $conversation->id,
+                'message' => $message->load('user')
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             \Log::error('Error in sendMessage:', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'error' => 'Failed to send message',
-                'details' => $e->getMessage()
+                'error' => 'Failed to send message'
             ], 500);
         }
     }
