@@ -7,13 +7,8 @@
 
         <title>{{ config('app.name', 'LegalAdvice.ai') }}</title>
 
-        <!-- Production Assets -->
-        @production
-            <link rel="stylesheet" href="{{ asset('build/assets/app-2juYq1Hy.css') }}">
-            <script src="{{ asset('build/assets/app-BjCBnTiP.js') }}" defer></script>
-        @else
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @endproduction
+        <!-- We should use Vite's asset handling in both production and development -->
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @stack('styles')
     </head>

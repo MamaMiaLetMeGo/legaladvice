@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 
 export default defineConfig({
-    // Base configuration for the Laravel plugin
+    // The Laravel plugin handles integration between Vite and Laravel
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
@@ -10,34 +10,49 @@ export default defineConfig({
         }),
     ],
     
-    // Production-specific optimizations
+    // Production build configuration ensures optimal asset delivery
     build: {
-        // Improve chunking strategy for better caching
+        // Ensure assets are built with the correct base URL for production
+        base: process.env.APP_URL ? '/' : '',
+        
+        // Create a manifest file that Laravel can use to load the correct asset versions
+        manifest: true,
+        
+        // Specify the output directory for built assets
+        outDir: 'public/build',
+        
+        // Configure how our code is chunked and optimized
         rollupOptions: {
             output: {
                 manualChunks: {
-                    // Group vendor dependencies separately
+                    // Group third-party libraries separately for better caching
                     vendor: ['alpinejs', 'axios']
                 }
             }
         },
-        // Ensure we're generating sourcemaps for production debugging
+        
+        // Generate sourcemaps to help debug production issues
         sourcemap: true,
-        // Optimize chunk size warnings
+        
+        // Prevent warnings about large chunks
         chunkSizeWarningLimit: 1000
     },
     
-    // Optimize dev server for Digital Ocean's environment
+    // Development server configuration
     server: {
-        // Allow connections from all hosts (important for DO's proxy setup)
-        host: 'db-mysql-nyc3-03426-do-user-8506940-0.j.db.ondigitalocean.com',
-        // Explicitly set HTTPS to false as DO handles SSL
+        // Allow connections from any host (important for development)
+        host: '0.0.0.0',
+        
+        // Let Digital Ocean handle SSL termination
         https: false,
-        // Increase HMR timeout for slower connections
+        
+        // Configure Hot Module Replacement
         hmr: {
-            timeout: 5000
+            // Increase timeout for slower connections
+            timeout: 5000,
+            
+            // Ensure HMR works through Digital Ocean's proxy
+            host: process.env.APP_URL ? new URL(process.env.APP_URL).host : 'localhost'
         }
     }
 });
-
-
