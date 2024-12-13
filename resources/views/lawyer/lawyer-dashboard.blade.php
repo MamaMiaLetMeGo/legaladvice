@@ -74,6 +74,9 @@
         }
 
         function claimConversation(id) {
+            const button = event.target;
+            button.disabled = true; // Prevent double clicks
+            
             fetch(`/lawyer/claim-conversation/${id}`, {
                 method: 'POST',
                 headers: {
@@ -81,9 +84,23 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                loadConversations();
+                if (data.success) {
+                    window.location.href = `/lawyer/conversation/${id}`;
+                } else {
+                    throw new Error(data.error || 'Failed to claim conversation');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to claim conversation. Please try again.');
+                button.disabled = false; // Re-enable the button on error
             });
         }
 

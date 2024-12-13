@@ -103,27 +103,53 @@ class ChatController extends Controller
 
     public function claimConversation(Conversation $conversation)
     {
-        if ($conversation->status !== 'pending') {
-            return response()->json(['error' => 'This conversation is no longer available'], 400);
+        try {
+            \Log::info('Attempting to claim conversation', [
+                'conversation_id' => $conversation->id,
+                'lawyer_id' => auth()->id(),
+                'current_status' => $conversation->status
+            ]);
+
+            // Check if conversation is already claimed
+            if ($conversation->status !== 'pending') {
+                return response()->json([
+                    'error' => 'Conversation is no longer available'
+                ], 400);
+            }
+
+            // Update the conversation
+            $conversation->update([
+                'lawyer_id' => auth()->id(),
+                'status' => 'active'
+            ]);
+
+            // Add system message
+            $conversation->messages()->create([
+                'content' => 'A legal expert has joined the conversation.',
+                'system_message' => true,
+                'user_id' => auth()->id()
+            ]);
+
+            \Log::info('Conversation claimed successfully', [
+                'conversation_id' => $conversation->id,
+                'lawyer_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'conversation' => $conversation->load('messages')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error claiming conversation', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to claim conversation'
+            ], 500);
         }
-
-        $conversation->update([
-            'lawyer_id' => auth()->id(),
-            'status' => 'active'
-        ]);
-
-        // Create a system message to notify the user
-        $conversation->messages()->create([
-            'content' => 'A legal expert has joined the conversation.',
-            'system_message' => true
-        ]);
-
-        broadcast(new ConversationUpdated($conversation))->toOthers();
-
-        return response()->json([
-            'message' => 'Conversation claimed successfully',
-            'conversation' => $conversation->load('messages')
-        ]);
     }
 
     public function getPendingConversations()
