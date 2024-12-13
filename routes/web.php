@@ -127,6 +127,14 @@ Route::middleware('web')->group(function () {
                     ->name('claim-conversation');
                 Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])
                     ->name('conversation.show');
+                Route::delete('/conversation/{conversation}', [ChatController::class, 'deleteConversation'])
+                    ->name('delete-conversation');
+                
+                // Add these new routes for lawyer messages
+                Route::post('/send-message', [ChatController::class, 'lawyerSendMessage'])
+                    ->name('send-message');
+                Route::get('/conversation/{conversation}/messages', [ChatController::class, 'getMessages'])
+                    ->name('conversation.messages');
             });
         });
     });

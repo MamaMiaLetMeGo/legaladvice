@@ -37,16 +37,18 @@
                         @endforeach
                     </div>
 
-                    <form @submit.prevent="sendMessage" class="mt-4">
+                    <form class="mt-4" onsubmit="sendMessage(event)">
                         <div class="flex gap-4">
                             <input 
                                 type="text" 
-                                x-model="newMessage" 
+                                id="message-input"
+                                name="message"
                                 class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                 placeholder="Type your message..."
                             >
                             <button 
                                 type="submit"
+                                id="send-message"
                                 class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
                             >
                                 Send
@@ -124,6 +126,56 @@
                 }
             }));
         });
+
+        function sendMessage(event) {
+            event.preventDefault();
+            
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+
+            fetch('/lawyer/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    conversation_id: {{ $conversation->id }},
+                    content: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear input
+                    messageInput.value = '';
+                    
+                    // Add message to UI immediately
+                    const messagesContainer = document.getElementById('messages');
+                    const messageHtml = `
+                        <div class="mb-4 text-right">
+                            <div class="inline-block max-w-3/4 bg-blue-500 text-white rounded-lg px-4 py-2">
+                                <p class="text-sm font-semibold mb-1">{{ auth()->user()->name }}</p>
+                                <p>${message}</p>
+                                <p class="text-xs text-blue-100 mt-1">
+                                    ${new Date().toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+                    
+                    // Scroll to bottom
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to send message. Please try again.');
+            });
+        }
     </script>
     @endpush
 @endsection 

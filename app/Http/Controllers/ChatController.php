@@ -205,4 +205,63 @@ class ChatController extends Controller
             'conversation' => $conversation->load(['messages.user', 'user']),
         ]);
     }
+
+    public function lawyerSendMessage(Request $request)
+    {
+        try {
+            \Log::info('Lawyer attempting to send message:', $request->all());
+
+            $validated = $request->validate([
+                'conversation_id' => 'required|exists:conversations,id',
+                'content' => 'required|string|max:1000',
+            ]);
+
+            $conversation = Conversation::findOrFail($request->conversation_id);
+
+            \Log::info('Found conversation:', [
+                'conversation_id' => $conversation->id,
+                'status' => $conversation->status
+            ]);
+
+            // Create the message
+            $message = $conversation->messages()->create([
+                'user_id' => auth()->id(),
+                'content' => $request->content,
+                'ip_address' => $request->ip()
+            ]);
+
+            \Log::info('Created message:', [
+                'message_id' => $message->id,
+                'content' => $message->content
+            ]);
+
+            // Update conversation's last_message_at
+            $conversation->update([
+                'last_message_at' => now()
+            ]);
+
+            // Load the user relationship for broadcasting
+            $message->load('user');
+
+            // Broadcast the new message
+            broadcast(new NewChatMessage($message))->toOthers();
+
+            \Log::info('Message broadcast completed');
+
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in lawyerSendMessage:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to send message'
+            ], 500);
+        }
+    }
 }
