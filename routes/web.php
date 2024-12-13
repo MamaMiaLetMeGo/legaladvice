@@ -149,7 +149,7 @@ Route::middleware('web')->group(function () {
     })->middleware(['auth', 'lawyer']);
 
     // Chat routes (accessible to all)
-    Route::post('/api/chat/send', [ChatController::class, 'sendMessage']);
+    Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
 
 });

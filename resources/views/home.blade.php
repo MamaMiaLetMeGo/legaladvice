@@ -227,6 +227,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     log('Script initialized');
+    
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    
     let conversationId = localStorage.getItem('conversationId');
 
     const messageButtons = document.querySelectorAll('[data-message]');
@@ -249,7 +253,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
                     content: content,
@@ -258,7 +263,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
-            log('Response received');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             log('Response data:', data);
             
@@ -272,6 +280,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error sending message:', error);
+            // Add more detailed error logging
+            if (error.response) {
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+            }
         }
     }
 
