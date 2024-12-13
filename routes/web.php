@@ -125,6 +125,8 @@ Route::middleware('web')->group(function () {
                     ->name('active-conversations');
                 Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])
                     ->name('claim-conversation');
+                Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])
+                    ->name('conversation.show');
             });
         });
     });

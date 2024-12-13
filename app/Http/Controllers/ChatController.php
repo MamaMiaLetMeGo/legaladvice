@@ -167,4 +167,16 @@ class ChatController extends Controller
 
         return response()->json(['message' => 'Conversation closed successfully']);
     }
+
+    public function showConversation(Conversation $conversation)
+    {
+        if ($conversation->lawyer_id !== auth()->id()) {
+            return redirect()->route('lawyer.dashboard')
+                ->with('error', 'You do not have access to this conversation.');
+        }
+
+        return view('lawyer.conversation', [
+            'conversation' => $conversation->load(['messages.user', 'user']),
+        ]);
+    }
 }
