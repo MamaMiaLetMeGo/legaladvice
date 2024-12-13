@@ -6,21 +6,20 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
-            // Tell the Laravel plugin where to find assets
             buildDirectory: 'build'
         }),
     ],
     build: {
-        // Tell Vite to put files in the public/build directory
-        outDir: 'public/build',
-        // Generate the manifest file
         manifest: true,
-        // Make sure the manifest goes in the right place
+        outDir: 'public/build',
+        assetsDir: 'assets',
         rollupOptions: {
-            input: {
-                app: 'resources/js/app.js',
-                styles: 'resources/css/app.css'
-            }
+            input: ['resources/css/app.css', 'resources/js/app.js']
+        }
+    },
+    server: {
+        hmr: {
+            host: 'localhost'
         }
     }
 });
