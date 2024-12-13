@@ -12,32 +12,17 @@
                 $manifestPath = public_path('build/.vite/manifest.json');
                 $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
                 $assetUrl = rtrim(config('app.url'), '/');
-                
-                // Debug information
-                if (config('app.debug')) {
-                    dump([
-                        'manifestPath' => $manifestPath,
-                        'manifestExists' => file_exists($manifestPath),
-                        'manifest' => $manifest
-                    ]);
-                }
             @endphp
             @if(!empty($manifest))
-                @foreach($manifest as $entry)
-                    @if(isset($entry['css']))
-                        @foreach($entry['css'] as $css)
-                            <link rel="stylesheet" href="{{ $assetUrl }}/build/{{ $css }}">
-                        @endforeach
-                    @endif
-                    @if(isset($entry['file']) && str_ends_with($entry['file'], '.js'))
-                        <script type="module" src="{{ $assetUrl }}/build/{{ $entry['file'] }}"></script>
-                    @endif
-                    @if(isset($entry['imports']))
-                        @foreach($entry['imports'] as $import)
-                            <link rel="modulepreload" href="{{ $assetUrl }}/build/{{ $import }}">
-                        @endforeach
-                    @endif
-                @endforeach
+                {{-- CSS Entry --}}
+                @if(isset($manifest['resources/css/app.css']))
+                    <link rel="stylesheet" href="{{ $assetUrl }}/build/{{ $manifest['resources/css/app.css']['file'] }}">
+                @endif
+
+                {{-- JS Entry --}}
+                @if(isset($manifest['resources/js/app.js']))
+                    <script type="module" src="{{ $assetUrl }}/build/{{ $manifest['resources/js/app.js']['file'] }}"></script>
+                @endif
             @else
                 @vite(['resources/css/app.css', 'resources/js/app.js'])
             @endif
