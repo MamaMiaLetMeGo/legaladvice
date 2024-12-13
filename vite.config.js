@@ -21,5 +21,6 @@ export default defineConfig({
         hmr: {
             host: 'localhost'
         }
-    }
+    },
+    base: process.env.APP_URL ? process.env.APP_URL : '/',
 });

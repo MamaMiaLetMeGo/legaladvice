@@ -12,6 +12,15 @@
                 $manifestPath = public_path('build/.vite/manifest.json');
                 $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
                 $assetUrl = rtrim(config('app.url'), '/');
+                
+                // Debug information
+                if (config('app.debug')) {
+                    dump([
+                        'manifestPath' => $manifestPath,
+                        'manifestExists' => file_exists($manifestPath),
+                        'manifest' => $manifest
+                    ]);
+                }
             @endphp
             @if(!empty($manifest))
                 @foreach($manifest as $entry)
@@ -20,8 +29,13 @@
                             <link rel="stylesheet" href="{{ $assetUrl }}/build/{{ $css }}">
                         @endforeach
                     @endif
-                    @if(str_ends_with($entry['file'], '.js'))
+                    @if(isset($entry['file']) && str_ends_with($entry['file'], '.js'))
                         <script type="module" src="{{ $assetUrl }}/build/{{ $entry['file'] }}"></script>
+                    @endif
+                    @if(isset($entry['imports']))
+                        @foreach($entry['imports'] as $import)
+                            <link rel="modulepreload" href="{{ $assetUrl }}/build/{{ $import }}">
+                        @endforeach
                     @endif
                 @endforeach
             @else
