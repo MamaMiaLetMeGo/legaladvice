@@ -24,7 +24,7 @@
 
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="p-6">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">Welcome aboard, {{ auth()->user()->name }}! 🎉</h1>
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Welcome, {{ auth()->user()->name }}! 🎉</h1>
             
             <div class="prose max-w-none">
                 <p class="text-lg text-gray-600 mb-8">

@@ -16,6 +16,7 @@ use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\ChatController;
 Route::middleware('web')->group(function () {
     // Include auth and admin routes
     require __DIR__.'/auth.php';
@@ -102,7 +103,25 @@ Route::middleware('web')->group(function () {
             });
         });
 
-        
+        // Lawyer routes
+        Route::prefix('lawyer')->name('lawyer.')->group(function () {
+            Route::get('/dashboard', function () {
+                if (!auth()->user()->is_lawyer) {
+                    return redirect()->route('home')->with('error', 'Access denied. Lawyer privileges required.');
+                }
+                return view('lawyer.lawyer-dashboard');
+            })->name('dashboard');
+
+            // Lawyer API endpoints
+            Route::prefix('api')->middleware('auth:sanctum')->group(function () {
+                Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
+                    ->name('pending-conversations');
+                Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])
+                    ->name('active-conversations');
+                Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])
+                    ->name('claim-conversation');
+            });
+        });
     });
 
     // Catch-all routes for posts and categories (must be last)
