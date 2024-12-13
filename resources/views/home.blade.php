@@ -19,13 +19,14 @@
                 <div 
                     x-data="chat()"
                     class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md"
+                    x-init="init()"
                 >
                     <!-- Chat Header -->
                     <div class="bg-blue-600 p-4">
                         <h2 class="text-white text-lg font-semibold">Chat with a Legal Expert</h2>
                         <p x-show="conversation" class="text-blue-100 text-sm">
-                            <span x-show="conversation.status === 'pending'">Waiting for a lawyer...</span>
-                            <span x-show="conversation.status === 'active'">Connected with <span x-text="conversation.lawyer.name"></span></span>
+                            <span x-show="conversation && conversation.status === 'pending'">Waiting for a lawyer...</span>
+                            <span x-show="conversation && conversation.status === 'active'">Connected with <span x-text="conversation?.lawyer?.name"></span></span>
                         </p>
                     </div>
                     
@@ -76,12 +77,11 @@
                                 x-model="newMessage"
                                 placeholder="Type your message..." 
                                 class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                                :disabled="!canSendMessage"
                             >
                             <button 
                                 type="submit"
                                 class="bg-blue-600 text-white rounded-lg px-4 py-2 font-semibold hover:bg-blue-700 transition duration-300 flex items-center justify-center space-x-2"
-                                :disabled="!canSendMessage"
+                                :disabled="!newMessage.trim()"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
@@ -103,6 +103,10 @@
 
 @push('scripts')
 <script>
+    window.userId = {{ auth()->check() ? auth()->id() : 'null' }};
+    window.pusherKey = '0cab072eaeccb141e0a3';
+    window.pusherCluster = 'eu';
+
 function chat() {
     return {
         messages: [],

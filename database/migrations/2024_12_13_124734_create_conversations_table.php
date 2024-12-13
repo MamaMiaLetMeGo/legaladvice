@@ -13,18 +13,19 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // The client
-            $table->foreignId('lawyer_id')->nullable()->constrained('users')->onDelete('set null'); // The assigned lawyer
-            $table->string('status')->default('pending'); // pending, active, closed
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('lawyer_id')->nullable();
+            $table->string('status')->default('pending');
+            $table->string('ip_address')->nullable();
             $table->timestamp('last_message_at')->nullable();
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('lawyer_id')->references('id')->on('users')->nullOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('conversations');
     }

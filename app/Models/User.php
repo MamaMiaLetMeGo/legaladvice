@@ -253,4 +253,9 @@ class User extends Authenticatable
     {
         return !$this->two_factor_enabled || session()->has('2fa.confirmed');
     }
+
+    public function isLawyer()
+    {
+        return $this->role === 'lawyer';
+    }
 }

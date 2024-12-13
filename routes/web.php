@@ -17,6 +17,13 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ChatController;
+use App\Models\Conversation;
+Route::get('/debug/middleware', function() {
+    dd(
+        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getMiddlewareGroups(),
+        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getRouteMiddleware()
+    );
+});
 Route::middleware('web')->group(function () {
     // Include auth and admin routes
     require __DIR__.'/auth.php';
@@ -53,6 +60,8 @@ Route::middleware('web')->group(function () {
             Route::get('/recovery', [TwoFactorChallengeController::class, 'showRecoveryForm'])->name('recovery');
             Route::post('/recovery', [TwoFactorChallengeController::class, 'recovery'])->name('recovery.store');
         });
+
+        Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     });
 
     // Protected routes that require 2FA
@@ -104,16 +113,12 @@ Route::middleware('web')->group(function () {
         });
 
         // Lawyer routes
-        Route::prefix('lawyer')->name('lawyer.')->group(function () {
-            Route::get('/dashboard', function () {
-                if (!auth()->user()->is_lawyer) {
-                    return redirect()->route('home')->with('error', 'Access denied. Lawyer privileges required.');
-                }
-                return view('lawyer.lawyer-dashboard');
-            })->name('dashboard');
+        Route::middleware(['auth', \App\Http\Middleware\LawyerMiddleware::class])->group(function () {
+            Route::prefix('lawyer')->name('lawyer.')->group(function () {
+                Route::get('/dashboard', function () {
+                    return view('lawyer.lawyer-dashboard');
+                })->name('dashboard');
 
-            // Lawyer API endpoints
-            Route::prefix('api')->middleware('auth:sanctum')->group(function () {
                 Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
                     ->name('pending-conversations');
                 Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])
@@ -127,6 +132,15 @@ Route::middleware('web')->group(function () {
     // Catch-all routes for posts and categories (must be last)
     Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
     Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
+
+    // Debug route to check pending conversations
+    Route::get('/debug/pending-conversations', function () {
+        return Conversation::where('status', 'pending')->with('messages')->get();
+    })->middleware(['auth', 'lawyer']);
+
+    // Chat routes (accessible to all)
+    Route::post('/api/chat/send', [ChatController::class, 'sendMessage']);
+    Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
 
 });
 

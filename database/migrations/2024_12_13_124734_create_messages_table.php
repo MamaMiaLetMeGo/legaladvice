@@ -13,18 +13,17 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conversation_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // sender
+            $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('user_id')->nullable(); // Changed to allow null
             $table->text('content');
-            $table->boolean('is_read')->default(false);
+            $table->string('ip_address')->nullable();
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('messages');
     }
