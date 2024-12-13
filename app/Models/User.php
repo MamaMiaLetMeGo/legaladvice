@@ -55,6 +55,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_lawyer' => 'boolean',
         'social_links' => 'array',    // For JSON storage of social media links
         'is_admin' => 'boolean',
         'two_factor_enabled' => 'boolean',
@@ -251,5 +252,10 @@ class User extends Authenticatable
     public function isTwoFactorComplete()
     {
         return !$this->two_factor_enabled || session()->has('2fa.confirmed');
+    }
+
+    public function isLawyer()
+    {
+        return $this->role === 'lawyer';
     }
 }

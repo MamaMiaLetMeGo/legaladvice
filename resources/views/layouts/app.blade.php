@@ -44,5 +44,8 @@
         </div>
 
         @stack('scripts')
+        <script>
+            window.userId = {{ auth()->id() }};
+        </script>
     </body>
 </html>
