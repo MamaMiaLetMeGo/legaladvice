@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', 'https://octopus-app-dkq7o.ondigitalocean.app'),
 
     /*
     |--------------------------------------------------------------------------
@@ -158,5 +158,8 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
     ],
+
+    'asset_url' => env('ASSET_URL', null),
+    'force_https' => env('FORCE_HTTPS', true),
 
 ];
