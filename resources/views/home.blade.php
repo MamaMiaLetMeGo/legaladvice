@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen">
-    <!-- Hero Section with Video Background and Gradient Overlay -->
+    <!-- Hero Section with Video Background -->
     <div class="relative overflow-hidden bg-white min-h-[506px]">
         <!-- Video Background -->
         <div class="absolute inset-0">
@@ -16,9 +16,8 @@
             >
                 <source src="{{ asset('videos/hero-bg.mp4') }}" type="video/mp4">
             </video>
-            <!-- Gradient Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-r from-gray-900/80 to-gray-800/80 animate-gradient mix-blend-multiply"></div>
-            <div class="absolute inset-0 bg-blue-950/20"></div>
+            <!-- Simple Black Overlay -->
+            <div class="absolute inset-0 bg-black/70"></div>
         </div>
 
         <!-- Content -->
@@ -69,7 +68,7 @@
                     </div>
                 </div>
 
-                <!-- Right side content (if needed) -->
+                <!-- Right side content -->
                 <div class="text-center md:text-left text-white">
                     <h1 class="text-4xl font-bold mb-4">Get Legal Help Now</h1>
                     <p class="text-xl opacity-90">Connect instantly with qualified legal experts ready to assist you with your questions.</p>
@@ -160,23 +159,6 @@
 
 @push('styles')
 <style>
-    @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    .animate-gradient {
-        background: linear-gradient(-45deg, 
-            rgba(17, 24, 39, 0.8), /* gray-900 */
-            rgba(31, 41, 55, 0.8), /* gray-800 */
-            rgba(17, 24, 39, 0.8), /* gray-900 */
-            rgba(31, 41, 55, 0.8)  /* gray-800 */
-        );
-        background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
-    }
-
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }

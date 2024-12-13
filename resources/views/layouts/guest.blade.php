@@ -11,8 +11,26 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Scripts and Styles -->
+        @production
+            @php
+                $manifestPath = public_path('build/.vite/manifest.json');
+                $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
+                $assetUrl = rtrim(config('app.url'), '/');
+            @endphp
+            @if(!empty($manifest))
+                @if(isset($manifest['resources/css/app.css']))
+                    <link rel="stylesheet" href="{{ $assetUrl }}/build/{{ $manifest['resources/css/app.css']['file'] }}">
+                @endif
+                @if(isset($manifest['resources/js/app.js']))
+                    <script type="module" src="{{ $assetUrl }}/build/{{ $manifest['resources/js/app.js']['file'] }}"></script>
+                @endif
+            @else
+                @vite(['resources/css/app.css', 'resources/js/app.js'])
+            @endif
+        @else
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endproduction
     </head>
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
