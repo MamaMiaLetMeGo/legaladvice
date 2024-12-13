@@ -11,16 +11,17 @@
             @php
                 $manifestPath = public_path('build/.vite/manifest.json');
                 $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : [];
+                $assetUrl = rtrim(config('app.url'), '/');
             @endphp
             @if(!empty($manifest))
                 @foreach($manifest as $entry)
                     @if(isset($entry['css']))
                         @foreach($entry['css'] as $css)
-                            <link rel="stylesheet" href="{{ asset('build/'.$css) }}">
+                            <link rel="stylesheet" href="{{ $assetUrl }}/build/{{ $css }}">
                         @endforeach
                     @endif
                     @if(str_ends_with($entry['file'], '.js'))
-                        <script type="module" src="{{ asset('build/'.$entry['file']) }}"></script>
+                        <script type="module" src="{{ $assetUrl }}/build/{{ $entry['file'] }}"></script>
                     @endif
                 @endforeach
             @else
