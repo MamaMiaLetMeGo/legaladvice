@@ -28,11 +28,10 @@
             
             <div class="prose max-w-none">
                 <p class="text-lg text-gray-600 mb-8">
-                    Thank you for joining my personal community! I'm excited to have you here.
+                    Thank you for joining our legal community! We are excited to have you here.
                 </p>
 
                 <div class="grid md:grid-cols-2 gap-8 mb-12">
-
                     {{-- Newsletter Section --}}
                     <div class="bg-green-50 p-6 rounded-lg">
                         <h2 class="text-xl font-semibold text-green-900 mb-4">
@@ -44,20 +43,15 @@
                         <form action="{{ route('newsletter.subscribe') }}" method="POST" class="space-y-4">
                             @csrf
                             <div class="space-y-2">
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" 
-                                           name="travel_updates" 
-                                           class="rounded" 
-                                           {{ auth()->user()->newsletterSubscription?->travel_updates ? 'checked' : '' }}>
-                                    <span>Travel Updates</span>
-                                </label>
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" 
-                                           name="sailing_updates" 
-                                           class="rounded" 
-                                           {{ auth()->user()->newsletterSubscription?->sailing_updates ? 'checked' : '' }}>
-                                    <span>Sailing Updates</span>
-                                </label>
+                                @foreach($categories as $category)
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" 
+                                               name="category_updates[{{ $category->id }}]" 
+                                               class="rounded" 
+                                               {{ auth()->user()->newsletterSubscription?->categories->contains($category->id) ? 'checked' : '' }}>
+                                        <span>{{ $category->name }} Updates</span>
+                                    </label>
+                                @endforeach
                             </div>
                             <button type="submit" 
                                     class="inline-block px-6 py-2 rounded-md transition

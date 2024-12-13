@@ -6,19 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class NewsletterSubscription extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'travel_updates',
-        'sailing_updates',
-    ];
-
-    protected $casts = [
-        'travel_updates' => 'boolean',
-        'sailing_updates' => 'boolean',
-    ];
+    protected $fillable = ['user_id'];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
     }
 }
