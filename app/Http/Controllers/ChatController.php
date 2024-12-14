@@ -34,8 +34,6 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        \Log::info('Starting sendMessage with request:', $request->all());
-
         try {
             $validated = $request->validate([
                 'content' => 'required|string|max:1000',
@@ -43,13 +41,11 @@ class ChatController extends Controller
                 'conversation_id' => 'nullable|exists:conversations,id'
             ]);
 
-            // Try to get existing conversation ID from request
             $conversationId = $request->input('conversation_id');
             
             if ($conversationId) {
                 $conversation = Conversation::findOrFail($conversationId);
             } else {
-                // Create new conversation
                 $conversation = Conversation::create([
                     'status' => 'pending',
                     'user_id' => auth()->id(),
@@ -58,14 +54,12 @@ class ChatController extends Controller
                 ]);
             }
 
-            // Create the message
             $message = $conversation->messages()->create([
                 'content' => $request->content,
                 'user_id' => auth()->id(),
                 'ip_address' => $request->ip(),
             ]);
 
-            // Broadcast the new message
             broadcast(new NewChatMessage($message->load('user')));
 
             return response()->json([
@@ -75,11 +69,6 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error in sendMessage:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'error' => 'Failed to send message'
             ], 500);
@@ -99,35 +88,21 @@ class ChatController extends Controller
     public function claimConversation(Conversation $conversation)
     {
         try {
-            \Log::info('Attempting to claim conversation', [
-                'conversation_id' => $conversation->id,
-                'lawyer_id' => auth()->id(),
-                'current_status' => $conversation->status
-            ]);
-
-            // Check if conversation is already claimed
             if ($conversation->status !== 'pending') {
                 return response()->json([
                     'error' => 'Conversation is no longer available'
                 ], 400);
             }
 
-            // Update the conversation
             $conversation->update([
                 'lawyer_id' => auth()->id(),
                 'status' => 'active'
             ]);
 
-            // Add system message
             $conversation->messages()->create([
                 'content' => 'A legal expert has joined the conversation.',
                 'system_message' => true,
                 'user_id' => auth()->id()
-            ]);
-
-            \Log::info('Conversation claimed successfully', [
-                'conversation_id' => $conversation->id,
-                'lawyer_id' => auth()->id()
             ]);
 
             return response()->json([
@@ -136,11 +111,6 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error claiming conversation', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'error' => 'Failed to claim conversation'
             ], 500);
@@ -183,7 +153,6 @@ class ChatController extends Controller
             'status' => 'closed',
         ]);
 
-        // Broadcast that the conversation was closed
         broadcast(new ConversationClosed($conversation))->toOthers();
 
         return response()->json(['message' => 'Conversation closed successfully']);
@@ -204,8 +173,6 @@ class ChatController extends Controller
     public function lawyerSendMessage(Request $request)
     {
         try {
-            \Log::info('Lawyer attempting to send message:', $request->all());
-
             $validated = $request->validate([
                 'conversation_id' => 'required|exists:conversations,id',
                 'content' => 'required|string|max:1000',
@@ -213,35 +180,19 @@ class ChatController extends Controller
 
             $conversation = Conversation::findOrFail($request->conversation_id);
 
-            \Log::info('Found conversation:', [
-                'conversation_id' => $conversation->id,
-                'status' => $conversation->status
-            ]);
-
-            // Create the message
             $message = $conversation->messages()->create([
                 'user_id' => auth()->id(),
                 'content' => $request->content,
                 'ip_address' => $request->ip()
             ]);
 
-            \Log::info('Created message:', [
-                'message_id' => $message->id,
-                'content' => $message->content
-            ]);
-
-            // Update conversation's last_message_at
             $conversation->update([
                 'last_message_at' => now()
             ]);
 
-            // Load the user relationship for broadcasting
             $message->load('user');
 
-            // Broadcast the new message
             broadcast(new NewChatMessage($message))->toOthers();
-
-            \Log::info('Message broadcast completed');
 
             return response()->json([
                 'success' => true,
@@ -249,11 +200,6 @@ class ChatController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error in lawyerSendMessage:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'error' => 'Failed to send message'
             ], 500);
