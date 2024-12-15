@@ -16,5 +16,12 @@ class AppServiceProvider extends ServiceProvider
         if(config('app.env') === 'production') {
             \URL::forceScheme('https');
         }
+
+        // Add this to ensure CSRF token is available
+        view()->composer('*', function ($view) {
+            if (!session()->has('_token')) {
+                session()->regenerateToken();
+            }
+        });
     }
 }

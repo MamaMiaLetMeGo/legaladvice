@@ -170,4 +170,14 @@ class AuthenticatedSessionController extends Controller
 
         return redirect('/');
     }
+
+    protected function authenticated(Request $request, $user)
+    {
+        if ($user->two_factor_enabled) {
+            session()->put('2fa.intended_url', url()->previous());
+            return redirect()->route('2fa.challenge');
+        }
+
+        return redirect()->intended(RouteServiceProvider::HOME);
+    }
 }
