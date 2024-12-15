@@ -23,6 +23,7 @@ use App\Http\Middleware\IsLawyer;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
+use App\Http\Middleware\LawyerMiddleware;
 
 Route::middleware(['web'])->group(function () {
     // Auth routes
@@ -71,7 +72,7 @@ Route::middleware('web')->group(function () {
     })->name('pricing');
 
     // Lawyer routes (protected, specific prefix)
-    Route::middleware(['auth', IsLawyer::class])->prefix('lawyer')->name('lawyer.')->group(function () {
+    Route::middleware(['auth', LawyerMiddleware::class])->prefix('lawyer')->name('lawyer.')->group(function () {
         Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
         Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
         Route::post('/conversations/bulk-delete', [LawyerDashboardController::class, 'bulkDelete'])->name('conversations.bulk-delete');
