@@ -8,14 +8,23 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'two-factor'])
+Route::middleware(['auth', IsAdmin::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         
         // Posts Management
-        Route::resource('posts', PostController::class);
+        Route::resource('posts', PostController::class)->names([
+            'index' => 'posts.index',
+            'create' => 'posts.create',
+            'store' => 'posts.store',
+            'show' => 'posts.show',
+            'edit' => 'posts.edit',
+            'update' => 'posts.update',
+            'destroy' => 'posts.destroy',
+        ]);
+        
         Route::post('/upload-video', [PostController::class, 'videoUpload'])->name('video.upload');
         Route::post('/upload-image', [PostController::class, 'uploadImages'])->name('image.upload');
         Route::post('/posts/{post}/publish', [PostController::class, 'publish'])->name('posts.publish');
