@@ -17,7 +17,10 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Lawyer\LawyerDashboardController;
 use App\Models\Conversation;
+use App\Http\Middleware\IsLawyer;
+
 Route::get('/debug/middleware', function() {
     dd(
         app()->make(\Illuminate\Contracts\Http\Kernel::class)->getMiddlewareGroups(),
@@ -113,29 +116,27 @@ Route::middleware('web')->group(function () {
         });
 
         // Lawyer routes
-        Route::middleware(['auth', \App\Http\Middleware\LawyerMiddleware::class])->group(function () {
-            Route::prefix('lawyer')->name('lawyer.')->group(function () {
-                Route::get('/dashboard', function () {
-                    return view('lawyer.lawyer-dashboard');
-                })->name('dashboard');
+        Route::middleware(['auth', IsLawyer::class])->prefix('lawyer')->name('lawyer.')->group(function () {
+            // Dashboard routes
+            Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
+            Route::delete('/conversations/bulk', [LawyerDashboardController::class, 'bulkDelete'])->name('conversations.bulk-delete');
+            Route::patch('/conversations/bulk-close', [LawyerDashboardController::class, 'bulkClose'])->name('conversations.bulk-close');
+            Route::delete('/conversation/{conversation}', [LawyerDashboardController::class, 'destroy'])->name('conversation.delete');
 
-                Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
-                    ->name('pending-conversations');
-                Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])
-                    ->name('active-conversations');
-                Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])
-                    ->name('claim-conversation');
-                Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])
-                    ->name('conversation.show');
-                Route::delete('/conversation/{conversation}', [ChatController::class, 'deleteConversation'])
-                    ->name('delete-conversation');
-                
-                // Add these new routes for lawyer messages
-                Route::post('/send-message', [ChatController::class, 'lawyerSendMessage'])
-                    ->name('send-message');
-                Route::get('/conversation/{conversation}/messages', [ChatController::class, 'getMessages'])
-                    ->name('conversation.messages');
-            });
+            // Chat routes
+            Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
+                ->name('pending-conversations');
+            Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])
+                ->name('active-conversations');
+            Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])
+                ->name('claim-conversation');
+            Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])
+                ->name('conversation.show');
+            Route::post('/send-message', [ChatController::class, 'lawyerSendMessage'])
+                ->name('send-message');
+            Route::get('/conversation/{conversation}/messages', [ChatController::class, 'getMessages'])
+                ->name('conversation.messages');
         });
     });
 
@@ -146,7 +147,7 @@ Route::middleware('web')->group(function () {
     // Debug route to check pending conversations
     Route::get('/debug/pending-conversations', function () {
         return Conversation::where('status', 'pending')->with('messages')->get();
-    })->middleware(['auth', 'lawyer']);
+    })->middleware(['auth', IsLawyer::class]);
 
     // Chat routes (accessible to all)
     Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
