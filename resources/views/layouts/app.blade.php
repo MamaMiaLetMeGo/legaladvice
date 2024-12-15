@@ -12,6 +12,8 @@
             window.userId = {{ auth()->check() ? auth()->id() : 'null' }};
             window.pusherKey = '{{ config('broadcasting.connections.pusher.key') }}';
             window.pusherCluster = '{{ config('broadcasting.connections.pusher.options.cluster') }}';
+            window.csrfToken = '{{ csrf_token() }}';
+            window.isAuthenticated = {{ auth()->check() ? 'true' : 'false' }};
         </script>
 
         @production

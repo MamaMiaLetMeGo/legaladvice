@@ -200,19 +200,17 @@ document.addEventListener('alpine:init', () => {
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-                
-                // Log the token to make sure it exists
-                console.log('CSRF Token:', csrfToken);
+                console.log('Using CSRF Token:', csrfToken); // For debugging
 
                 const response = await fetch('/api/chat/send', {
                     method: 'POST',
+                    credentials: 'same-origin', // Important for cookies
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     },
-                    credentials: 'same-origin', // Add this line
                     body: JSON.stringify({
                         content: this.newMessage,
                         conversation_id: this.conversationId,
@@ -220,6 +218,7 @@ document.addEventListener('alpine:init', () => {
                     })
                 });
 
+                // Improved error handling
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Server response:', errorText);
