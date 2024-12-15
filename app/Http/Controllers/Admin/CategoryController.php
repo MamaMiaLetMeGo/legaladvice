@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Post;
 use App\Http\Requests\Admin\CategoryStoreRequest;
 use App\Http\Requests\Admin\CategoryUpdateRequest;
 use Illuminate\Support\Facades\Storage;
@@ -18,13 +19,27 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::withCount(['posts' => function($query) {
-            $query->published();
-        }])
-        ->orderBy('name')
-        ->paginate(10);
-
-        return view('admin.categories.index', compact('categories'));
+        try {
+            Log::info('CategoryController@index started');
+            
+            $categories = Category::withCount(['posts' => function($query) {
+                if (method_exists(Post::class, 'scopePublished')) {
+                    $query->published();
+                }
+            }])
+            ->orderBy('name')
+            ->paginate(10);
+            
+            Log::info('Categories retrieved', ['count' => $categories->count()]);
+            
+            return view('admin.categories.index', compact('categories'));
+        } catch (\Exception $e) {
+            Log::error('Error in CategoryController@index', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**

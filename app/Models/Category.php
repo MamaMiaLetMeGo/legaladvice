@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Category extends Model
 {
@@ -56,11 +58,10 @@ class Category extends Model
     /**
      * Get the posts for the category.
      */
-    public function posts()
+    public function posts(): BelongsToMany
     {
         return $this->belongsToMany(Post::class)
-                    ->withTimestamps()
-                    ->orderBy('published_date', 'desc');
+                    ->withTimestamps();
     }
 
     /**

@@ -221,6 +221,58 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add this section to your admin dashboard -->
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Route Explorer</h2>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <div class="mb-4">
+                        <input type="text" id="routeSearch" 
+                               class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                               placeholder="Search routes...">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="routeList">
+                        @php
+                            $routes = collect(\Route::getRoutes())->filter(function ($route) {
+                                // Only include GET routes that don't have parameters and aren't API routes
+                                return in_array('GET', $route->methods()) && 
+                                       !str_contains($route->uri(), '{') && 
+                                       !str_starts_with($route->uri(), 'api/') &&
+                                       !str_starts_with($route->uri(), '_');
+                            })->map(function ($route) {
+                                return [
+                                    'uri' => $route->uri() === '/' ? 'home' : $route->uri(),
+                                    'name' => $route->getName(),
+                                    'middleware' => collect($route->middleware())->implode(', ')
+                                ];
+                            })->sortBy('uri');
+                        @endphp
+
+                        @foreach($routes as $route)
+                            <div class="route-item bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors duration-150">
+                                <a href="{{ url($route['uri'] === 'home' ? '/' : $route['uri']) }}" 
+                                   target="_blank" 
+                                   class="block">
+                                    <div class="font-medium text-indigo-600">
+                                        {{ $route['uri'] }}
+                                    </div>
+                                    @if($route['name'])
+                                        <div class="text-sm text-gray-600">
+                                            Route Name: {{ $route['name'] }}
+                                        </div>
+                                    @endif
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Middleware: {{ $route['middleware'] ?: 'none' }}
+                                    </div>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -316,5 +368,34 @@ function toggleAdminStatus(userId) {
     }
 }
 </script>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('routeSearch');
+    const routeItems = document.querySelectorAll('.route-item');
+
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+
+        routeItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+    });
+});
+</script>
+@endpush
+
+@push('styles')
+<style>
+    .route-item {
+        transition: transform 0.15s ease-in-out;
+    }
+    .route-item:hover {
+        transform: translateY(-2px);
+    }
+</style>
 @endpush
 @endsection
