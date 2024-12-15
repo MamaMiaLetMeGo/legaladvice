@@ -12,17 +12,20 @@ use Illuminate\Queue\SerializesModels;
 
 class ConversationClaimed implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $conversation;
-
-    public function __construct(Conversation $conversation)
-    {
-        $this->conversation = $conversation;
-    }
-
     public function broadcastOn()
     {
-        return new Channel('conversations');
+        return new PrivateChannel('conversations');
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'conversation' => [
+                'id' => $this->conversation->id,
+                'status' => $this->conversation->status,
+                'lawyer_id' => $this->conversation->lawyer_id,
+                'updated_at' => $this->conversation->updated_at
+            ]
+        ];
     }
 }

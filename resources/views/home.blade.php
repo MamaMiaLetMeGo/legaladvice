@@ -91,16 +91,22 @@
                     <!-- Chat Messages Area -->
                     <div id="messages" class="flex-1 overflow-y-auto p-4 min-h-[400px]">
                         <!-- Welcome message -->
-                        <div class="flex items-start mb-4">
-                            <div class="flex-shrink-0">
-                                <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                                    </svg>
+                        <div class="ml-3 bg-white rounded-lg py-2 px-4 shadow-sm mb-4">
+                            <div x-data="{ showMessage: false }" x-init="setTimeout(() => showMessage = true, 1000)">
+                                <!-- Loading dots -->
+                                <div x-show="!showMessage" class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
                                 </div>
-                            </div>
-                            <div class="ml-4 bg-white rounded-lg py-2 px-4 shadow-sm max-w-[85%]">
-                                <p class="text-gray-800 text-base">Hello! What legal matter can I help you with right now?</p>
+                                <!-- Message -->
+                                <p x-show="showMessage" 
+                                    x-transition:enter="transition ease-out duration-300"
+                                    x-transition:enter-start="opacity-0" 
+                                    x-transition:enter-end="opacity-100"
+                                    class="text-gray-800">
+                                    Hello! What legal matter can I help you with right now?
+                                </p>
                             </div>
                         </div>
 
@@ -193,19 +199,32 @@ document.addEventListener('alpine:init', () => {
             if (!this.newMessage.trim()) return;
 
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                
+                // Log the token to make sure it exists
+                console.log('CSRF Token:', csrfToken);
+
                 const response = await fetch('/api/chat/send', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     },
+                    credentials: 'same-origin', // Add this line
                     body: JSON.stringify({
                         content: this.newMessage,
                         conversation_id: this.conversationId,
                         new_conversation: !this.conversationId
                     })
                 });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 
@@ -220,7 +239,11 @@ document.addEventListener('alpine:init', () => {
                 this.$nextTick(() => this.scrollToBottom());
                 
             } catch (error) {
-                console.error('Error sending message:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    response: error.response,
+                    stack: error.stack
+                });
             }
         },
 
