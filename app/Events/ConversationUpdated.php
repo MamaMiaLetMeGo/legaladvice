@@ -13,17 +13,20 @@ use App\Models\Conversation;
 
 class ConversationUpdated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $conversation;
-
-    public function __construct(Conversation $conversation)
-    {
-        $this->conversation = $conversation;
-    }
-
     public function broadcastOn()
     {
-        return new PrivateChannel('chat.' . $this->conversation->user_id);
+        return new PrivateChannel('chat.conversation.' . $this->conversation->id);
     }
-} 
+
+    public function broadcastWith()
+    {
+        return [
+            'conversation' => [
+                'id' => $this->conversation->id,
+                'status' => $this->conversation->status,
+                'lawyer_id' => $this->conversation->lawyer_id,
+                'updated_at' => $this->conversation->updated_at
+            ]
+        ];
+    }
+}

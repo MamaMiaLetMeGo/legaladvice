@@ -24,9 +24,23 @@ return [
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
                 'encrypted' => true,
-                'host' => env('PUSHER_APP_HOST', '127.0.0.1'),
-                'port' => env('PUSHER_PORT', 6001),
-                'scheme' => env('PUSHER_SCHEME', 'https')
+                'useTLS' => true,
+                // Update the host configuration for better flexibility
+                'host' => env('PUSHER_HOST', null) ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+                'port' => env('PUSHER_PORT', 443),
+                'scheme' => env('PUSHER_SCHEME', 'https'),
+                // Add these important security and performance options
+                'curl_options' => [
+                    CURLOPT_SSL_VERIFYHOST => 2,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                ],
+                // Add WebSocket configuration
+                'client_options' => [
+                    // Disable stats collection for better performance
+                    'disable_stats' => true,
+                    // Set a reasonable timeout
+                    'timeout' => 30,
+                ]
             ],
         ],
 

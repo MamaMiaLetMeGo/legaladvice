@@ -11,17 +11,19 @@ use Illuminate\Queue\SerializesModels;
 
 class ConversationClosed implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $conversation;
-
-    public function __construct(Conversation $conversation)
-    {
-        $this->conversation = $conversation;
-    }
-
     public function broadcastOn()
     {
-        return new Channel('conversations');
+        return new PrivateChannel('conversations');
     }
-} 
+
+    public function broadcastWith()
+    {
+        return [
+            'conversation' => [
+                'id' => $this->conversation->id,
+                'status' => 'closed',
+                'closed_at' => $this->conversation->updated_at
+            ]
+        ];
+    }
+}

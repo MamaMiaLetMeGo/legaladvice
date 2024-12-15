@@ -7,6 +7,15 @@
 
         <title>{{ config('app.name', 'LegalAdvice.ai') }}</title>
 
+        <!-- Add Pusher configuration before any JavaScript loads -->
+        <script>
+            window.userId = {{ auth()->check() ? auth()->id() : 'null' }};
+            window.pusherKey = '{{ config('broadcasting.connections.pusher.key') }}';
+            window.pusherCluster = '{{ config('broadcasting.connections.pusher.options.cluster') }}';
+            window.csrfToken = '{{ csrf_token() }}';
+            window.isAuthenticated = {{ auth()->check() ? 'true' : 'false' }};
+        </script>
+
         @production
             @php
                 $manifestPath = public_path('build/.vite/manifest.json');
@@ -44,8 +53,5 @@
         </div>
 
         @stack('scripts')
-        <script>
-            window.userId = {{ auth()->id() }};
-        </script>
     </body>
 </html>
