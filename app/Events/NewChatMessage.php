@@ -11,20 +11,12 @@ use Illuminate\Queue\SerializesModels;
 
 class NewChatMessage implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $message;
-
-    public function __construct(Message $message)
-    {
-        $this->message = $message;
-    }
-
     public function broadcastOn()
     {
-        return new Channel('chat.' . $this->message->conversation_id);
+        return new PrivateChannel('chat.conversation.' . $this->message->conversation_id);
     }
 
+    // Your existing broadcastWith is good, but let's add more security
     public function broadcastWith()
     {
         return [
@@ -32,8 +24,12 @@ class NewChatMessage implements ShouldBroadcast
                 'id' => $this->message->id,
                 'content' => $this->message->content,
                 'user_id' => $this->message->user_id,
-                'user' => $this->message->user,
-                'created_at' => $this->message->created_at,
+                'user' => [
+                    'id' => $this->message->user->id,
+                    'name' => $this->message->user->name,
+                    'is_lawyer' => $this->message->user->is_lawyer
+                ],
+                'created_at' => $this->message->created_at
             ]
         ];
     }

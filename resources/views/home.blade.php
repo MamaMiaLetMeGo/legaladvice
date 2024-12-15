@@ -18,7 +18,7 @@
                 <!-- Chat Box -->
                 <div 
                     x-data="chat()"
-                    class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md"
+                    class="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md min-h-[600px] flex flex-col"
                     x-init="init()"
                 >
                     <!-- Chat Header -->
@@ -29,60 +29,104 @@
                             <span x-show="conversation && conversation.status === 'active'">Connected with <span x-text="conversation?.lawyer?.name"></span></span>
                         </p>
                         <div class="flex flex-wrap gap-2 mt-3">
-                            <button data-message="I need help with Family Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Family Law</button>
-                            <button data-message="I need help with Criminal Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Criminal Law</button>
-                            <button data-message="I need help with Business Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Business Law</button>
-                            <button data-message="I need help with Real Estate Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Real Estate</button>
-                            <button data-message="I need help with Immigration Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Immigration</button>
-                            <button data-message="I need help with Employment Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Employment Law</button>
-                            <button data-message="I need help with Personal Injury Law" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">Personal Injury</button>
-                            <button data-message="I need help with another legal matter" class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full">More</button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Family Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Family
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Criminal Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Criminal
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Business Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Business
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Real Estate Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Real Estate
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Immigration Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Immigration
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Employment Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Employment
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with Personal Injury Law" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                Personal Injury
+                            </button>
+                            <button 
+                                @click="handleQuickMessage($el.dataset.message)" 
+                                data-message="I need help with another legal matter" 
+                                class="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-400 text-white rounded-full"
+                            >
+                                More
+                            </button>
                         </div>
                     </div>
                     
                     <!-- Chat Messages Area -->
-                    <div 
-                        class="bg-gray-50 h-80 p-4 overflow-y-auto"
-                        x-ref="messagesContainer"
-                        id="messages"
-                    >
-                        <div class="space-y-4">
-                            <!-- Welcome message -->
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0">
-                                    <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                                        </svg>
-                                    </div>
+                    <div id="messages" class="flex-1 overflow-y-auto p-4 min-h-[400px]">
+                        <!-- Welcome message -->
+                        <div class="ml-3 bg-white rounded-lg py-2 px-4 shadow-sm mb-4">
+                            <div x-data="{ showMessage: false }" x-init="setTimeout(() => showMessage = true, 1000)">
+                                <!-- Loading dots -->
+                                <div x-show="!showMessage" class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
                                 </div>
-                                <div class="ml-3 bg-white rounded-lg py-2 px-4 shadow-sm">
-                                    <div x-data="{ showMessage: false }" x-init="setTimeout(() => showMessage = true, 1000)">
-                                        <!-- Loading dots -->
-                                        <div x-show="!showMessage" class="flex space-x-1">
-                                            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-                                            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                                            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-                                        </div>
-                                        <!-- Message -->
-                                        <p x-show="showMessage" 
-                                           x-transition:enter="transition ease-out duration-300"
-                                           x-transition:enter-start="opacity-0" 
-                                           x-transition:enter-end="opacity-100"
-                                           class="text-gray-800">
-                                            Hello! What legal matter can I help you with right now?
-                                        </p>
-                                    </div>
-                                </div>
+                                <!-- Message -->
+                                <p x-show="showMessage" 
+                                    x-transition:enter="transition ease-out duration-300"
+                                    x-transition:enter-start="opacity-0" 
+                                    x-transition:enter-end="opacity-100"
+                                    class="text-gray-800">
+                                    Hello! What legal matter can I help you with right now?
+                                </p>
                             </div>
+                        </div>
 
-                            <!-- Dynamic Messages -->
+                        <!-- Dynamic Messages Container -->
+                        <div id="dynamic-messages">
                             <template x-for="message in messages" :key="message.id">
-                                <div class="message-custom-style flex flex-col items-end mb-4">
-                                    <div class="message-bubble bg-blue-500 text-white rounded-[30px] px-6 py-3 max-w-[75%]">
-                                        <div class="text-right text-sm mb-1">Guest</div>
-                                        <div class="text-right text-sm" x-text="message.content"></div>
-                                        <div class="text-right text-xs text-blue-100 mt-1" x-text="formatDate(message.created_at)"></div>
+                                <div class="flex flex-col items-end mb-3">
+                                    <div class="bg-blue-500 text-white rounded-[20px] px-4 py-2 max-w-[85%]">
+                                        <div class="text-right text-sm font-medium mb-1">Guest</div>
+                                        <div class="text-right text-base" x-text="message.content"></div>
+                                        <div class="text-right text-xs text-blue-100 mt-1" 
+                                             x-text="new Date(message.created_at).toLocaleString('en-US', {
+                                                 year: 'numeric',
+                                                 month: 'numeric',
+                                                 day: 'numeric',
+                                                 hour: 'numeric',
+                                                 minute: '2-digit',
+                                                 hour12: true
+                                             })">
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -131,210 +175,96 @@
     window.pusherKey = '0cab072eaeccb141e0a3';
     window.pusherCluster = 'eu';
 
-function chat() {
-    return {
+document.addEventListener('alpine:init', () => {
+    Alpine.data('chat', () => ({
         messages: [],
         newMessage: '',
         conversation: null,
-        userId: {{ auth()->id() ?? 'null' }},
-        canSendMessage: true,
+        conversationId: localStorage.getItem('conversationId'),
 
         init() {
-            this.loadExistingConversation();
-            this.setupEchoListeners();
+            if (this.conversationId) {
+                this.setupEchoListener(this.conversationId);
+            }
+            
+            // Remove the separate button click handlers since we'll handle it through x-on:click
         },
 
-        async loadExistingConversation() {
-            if (!this.userId) return;
-
-            try {
-                const response = await fetch('/api/chat/conversation');
-                const data = await response.json();
-                if (data.conversation) {
-                    this.conversation = data.conversation;
-                    this.messages = data.messages;
-                    this.scrollToBottom();
-                }
-            } catch (error) {
-                console.error('Error loading conversation:', error);
-            }
+        handleQuickMessage(message) {
+            this.newMessage = message;
+            this.sendMessage();
         },
 
         async sendMessage() {
-            if (!this.newMessage.trim() || !this.canSendMessage) return;
+            if (!this.newMessage.trim()) return;
 
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                
+                // Log the token to make sure it exists
+                console.log('CSRF Token:', csrfToken);
+
                 const response = await fetch('/api/chat/send', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
                     },
+                    credentials: 'same-origin', // Add this line
                     body: JSON.stringify({
                         content: this.newMessage,
-                        conversation_id: this.conversation?.id,
-                        new_conversation: !this.conversation
+                        conversation_id: this.conversationId,
+                        new_conversation: !this.conversationId
                     })
                 });
 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
                 
-                if (!this.conversation) {
-                    this.conversation = data.conversation;
+                if (!this.conversationId) {
+                    this.conversationId = data.conversation_id;
+                    localStorage.setItem('conversationId', this.conversationId);
+                    this.setupEchoListener(this.conversationId);
                 }
-                
-                this.messages.push(data.message);
+
+                this.messages = [...this.messages, data.message];
                 this.newMessage = '';
-                this.scrollToBottom();
+                this.$nextTick(() => this.scrollToBottom());
+                
             } catch (error) {
-                console.error('Error sending message:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    response: error.response,
+                    stack: error.stack
+                });
             }
         },
 
-        setupEchoListeners() {
-            if (!this.userId) return;
-
-            Echo.private(`chat.${this.userId}`)
-                .listen('NewMessage', (e) => {
-                    this.messages.push(e.message);
-                    this.scrollToBottom();
-                })
-                .listen('ConversationUpdated', (e) => {
-                    this.conversation = e.conversation;
-                });
+        setupEchoListener(conversationId) {
+            if (typeof window.Echo !== 'undefined' && conversationId) {
+                window.Echo.private(`chat.conversation.${conversationId}`)
+                    .listen('NewChatMessage', (e) => {
+                        // Add new message to the end of the array
+                        this.messages = [...this.messages, e.message];
+                        this.$nextTick(() => this.scrollToBottom());
+                    });
+            }
         },
 
         scrollToBottom() {
-            this.$nextTick(() => {
-                const container = this.$refs.messagesContainer;
-                container.scrollTop = container.scrollHeight;
-            });
-        },
-
-        formatDate(date) {
-            return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const DEBUG = {{ config('app.debug') ? 'true' : 'false' }};
-    
-    function log(...args) {
-        if (DEBUG) {
-            console.log(...args);
-        }
-    }
-
-    log('Script initialized');
-    
-    // Get CSRF token from meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-    
-    let conversationId = localStorage.getItem('conversationId');
-
-    const messageButtons = document.querySelectorAll('[data-message]');
-    log('Found message buttons:', messageButtons.length);
-
-    messageButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            log('Button clicked');
-            const message = this.dataset.message;
-            log('Message to send:', message);
-            sendMessage(message);
-        });
-    });
-
-    async function sendMessage(content) {
-        log('Attempting to send message:', content);
-        try {
-            const response = await fetch('/api/chat/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    content: content,
-                    conversation_id: conversationId,
-                    new_conversation: !conversationId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            log('Response data:', data);
-            
-            if (data.success) {
-                if (!conversationId) {
-                    conversationId = data.conversation_id;
-                    localStorage.setItem('conversationId', conversationId);
-                    setupEchoListener(conversationId);
-                }
-                addMessageToUI(data.message);
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-            // Add more detailed error logging
-            if (error.response) {
-                console.error('Response data:', error.response.data);
-                console.error('Response status:', error.response.status);
+            const messagesContainer = document.getElementById('messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         }
-    }
-
-    function setupEchoListener(conversationId) {
-        if (typeof window.Echo !== 'undefined' && conversationId) {
-            console.log('Setting up Echo listener for conversation:', conversationId);
-            
-            window.Echo.channel(`chat.${conversationId}`)
-                .listen('NewChatMessage', (e) => {
-                    console.log('Received new message:', e);
-                    addMessageToUI(e.message);
-                });
-        }
-    }
-
-    function addMessageToUI(message) {
-        const messagesContainer = document.getElementById('messages');
-        if (!messagesContainer) {
-            console.error('Messages container not found');
-            return;
-        }
-
-        const messageHtml = `
-            <div class="message-custom-style flex flex-col items-end mb-4">
-                <div class="message-bubble bg-blue-500 text-white rounded-[30px] px-6 py-3 max-w-[75%]">
-                    <div class="text-right text-sm mb-1">Guest</div>
-                    <div class="text-right text-sm">${message.content}</div>
-                    <div class="text-right text-xs text-blue-100 mt-1">
-                        ${new Date(message.created_at).toLocaleString('en-US', {
-                            month: 'numeric',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        })}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    // Set up initial Echo listener if we have a conversation ID
-    if (conversationId) {
-        setupEchoListener(conversationId);
-        console.log('Initial conversation ID:', conversationId);
-    }
+    }));
 });
 </script>
 @endpush
