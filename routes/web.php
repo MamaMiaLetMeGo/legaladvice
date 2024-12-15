@@ -120,9 +120,14 @@ Route::middleware('web')->group(function () {
             // Dashboard routes
             Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
             Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
-            Route::delete('/conversations/bulk', [LawyerDashboardController::class, 'bulkDelete'])->name('conversations.bulk-delete');
-            Route::patch('/conversations/bulk-close', [LawyerDashboardController::class, 'bulkClose'])->name('conversations.bulk-close');
-            Route::delete('/conversation/{conversation}', [LawyerDashboardController::class, 'destroy'])->name('conversation.delete');
+            
+            // Update these routes to match the frontend AJAX calls
+            Route::post('/conversations/bulk-delete', [LawyerDashboardController::class, 'bulkDelete'])
+                ->name('conversations.bulk-delete');
+            Route::post('/conversations/bulk-close', [LawyerDashboardController::class, 'bulkClose'])
+                ->name('conversations.bulk-close');
+            Route::delete('/conversations/{conversation}', [LawyerDashboardController::class, 'destroy'])
+                ->name('conversations.destroy');
 
             // Chat routes
             Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
