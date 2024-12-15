@@ -10,22 +10,20 @@ Broadcast::channel('conversations', function ($user) {
 });
 
 // Channel for individual chat conversations
-Broadcast::channel('chat.conversation.{conversationId}', function ($user, $conversationId) {
-    // Find the conversation, but handle the case where it might not exist
-    $conversation = Conversation::find($conversationId);
+Broadcast::channel('chat.conversation.{id}', function ($user = null, $id) {
+    // Allow access even without authentication
+    $conversation = \App\Models\Conversation::find($id);
     
-    // If conversation doesn't exist, deny access
-    if (!$conversation) {
-        return false;
+    if (!$user) {
+        // For guest users, check if the conversation exists and is public
+        return $conversation && !$conversation->user_id;
     }
     
-    // Allow access if any of these conditions are met:
-    // 1. The user is the client who created the conversation
-    // 2. The user is the assigned lawyer
-    // 3. The user is a lawyer and the conversation is pending assignment
-    return $user->id === $conversation->user_id || 
-           $user->id === $conversation->lawyer_id ||
-           ($user->is_lawyer && $conversation->status === 'pending');
+    // For authenticated users, check if they're part of the conversation
+    return $conversation && (
+        $conversation->user_id === $user->id || 
+        $conversation->lawyer_id === $user->id
+    );
 });
 
 // Optional: Add a presence channel for typing indicators or online status
