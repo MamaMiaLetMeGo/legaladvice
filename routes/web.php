@@ -24,10 +24,27 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 
-Route::middleware('web')->group(function () {
-    // Include auth routes first
+Route::middleware(['web'])->group(function () {
+    // Auth routes
     require __DIR__.'/auth.php';
 
+    // 2FA routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/2fa', [TwoFactorChallengeController::class, 'create'])
+            ->name('2fa.challenge');
+        Route::post('/2fa', [TwoFactorChallengeController::class, 'store'])
+            ->name('2fa.verify');
+        Route::get('/2fa/recovery', [TwoFactorChallengeController::class, 'recovery'])
+            ->name('2fa.recovery');
+    });
+
+    // Protected routes
+    Route::middleware(['auth', 'two-factor'])->group(function () {
+        // Your existing routes...
+    });
+});
+
+Route::middleware('web')->group(function () {
     // Add this dashboard route before other routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -72,14 +89,6 @@ Route::middleware('web')->group(function () {
 
     // Authentication required routes
     Route::middleware(['auth'])->group(function () {
-        // 2FA routes (without verification)
-        Route::prefix('2fa')->name('2fa.')->group(function () {
-            Route::get('/', [TwoFactorChallengeController::class, 'create'])->name('challenge');
-            Route::post('/', [TwoFactorChallengeController::class, 'store'])->name('verify');
-            Route::get('/recovery', [TwoFactorChallengeController::class, 'showRecoveryForm'])->name('recovery');
-            Route::post('/recovery', [TwoFactorChallengeController::class, 'recovery'])->name('recovery.store');
-        });
-
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     });
 

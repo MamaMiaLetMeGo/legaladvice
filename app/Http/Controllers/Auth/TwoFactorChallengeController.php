@@ -4,40 +4,43 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use PragmaRX\Google2FA\Google2FA;
-use App\Notifications\SecurityAlert;
+use Illuminate\Support\Facades\Log;
 
 class TwoFactorChallengeController extends Controller
 {
     public function create()
     {
-        return view('auth.2fa-challenge');
+        return view('auth.two-factor-challenge');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'code' => 'required|string|size:6',
-        ]);
+        $code = $request->code;
+        $recovery_code = $request->recovery_code;
 
-        $user = auth()->user();
-        $google2fa = new Google2FA();
+        if ($code) {
+            $valid = $request->user()->verifyTwoFactorCode($code);
+        } elseif ($recovery_code) {
+            $valid = $request->user()->verifyTwoFactorRecoveryCode($recovery_code);
+        } else {
+            return back()->withErrors(['code' => 'Please provide a verification code.']);
+        }
 
-        if ($google2fa->verifyKey($user->two_factor_secret, $request->code)) {
-            session(['2fa.confirmed' => true]);
+        if ($valid) {
+            session()->put('two_factor_confirmed', true);
             
-            // Get intended URL
-            $intended = session()->get('url.intended');
+            // Ensure CSRF token is preserved
+            session()->keep(['_token']);
             
-            // If intended URL is an asset or not set, use welcome.back route
-            if (!$intended || str_contains($intended, 'images/')) {
-                $intended = route('welcome.back');
-            }
-            
-            // Clear the intended URL
-            session()->forget('url.intended');
-            
-            return redirect()->to($intended);
+            // Log successful verification
+            Log::info('2FA verification successful', [
+                'user' => $request->user()->email,
+                'method' => $code ? 'code' : 'recovery_code'
+            ]);
+
+            return redirect()->intended(
+                session()->pull('url.intended', route('home'))
+            );
         }
 
         return back()->withErrors(['code' => 'The provided code was invalid.']);
