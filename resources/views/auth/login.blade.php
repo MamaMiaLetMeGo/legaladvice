@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <x-auth-card>
         <x-slot name="logo">
             <a href="/">

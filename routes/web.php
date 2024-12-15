@@ -20,43 +20,59 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Lawyer\LawyerDashboardController;
 use App\Models\Conversation;
 use App\Http\Middleware\IsLawyer;
+use App\Http\Middleware\IsAdmin;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/debug/middleware', function() {
-    dd(
-        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getMiddlewareGroups(),
-        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getRouteMiddleware()
-    );
-});
 Route::middleware('web')->group(function () {
-    // Include auth and admin routes
+    // Include auth routes first
     require __DIR__.'/auth.php';
-    require __DIR__.'/admin.php';
 
-    // Static routes and public routes
+    // Add this dashboard route before other routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
+
+    // Static routes (no parameters)
     Route::get('/', function () {
         $posts = Post::with(['author', 'categories'])
             ->published()
             ->latest('published_date')
             ->take(6)
             ->get();
-
         return view('home', compact('posts'));
     })->name('home');
 
-    // Fixed routes (non-dynamic segments)
     Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
     Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
     Route::get('/categories', [CategoryViewController::class, 'index'])->name('categories.index');
     Route::get('/legal-expert', function () {
         return view('legal-expert');
     })->name('legal-expert');
-    
     Route::get('/pricing', function () {
         return view('pricing');
     })->name('pricing');
 
-    // 2FA verification routes (without 2FA middleware)
+    // Lawyer routes (protected, specific prefix)
+    Route::middleware(['auth', IsLawyer::class])->prefix('lawyer')->name('lawyer.')->group(function () {
+        Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
+        Route::post('/conversations/bulk-delete', [LawyerDashboardController::class, 'bulkDelete'])->name('conversations.bulk-delete');
+        Route::post('/conversations/bulk-close', [LawyerDashboardController::class, 'bulkClose'])->name('conversations.bulk-close');
+        Route::delete('/conversations/{conversation}', [LawyerDashboardController::class, 'destroy'])->name('conversations.destroy');
+
+        // Chat routes
+        Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])->name('pending-conversations');
+        Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])->name('active-conversations');
+        Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])->name('claim-conversation');
+        Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])->name('conversation.show');
+        Route::post('/send-message', [ChatController::class, 'lawyerSendMessage'])->name('send-message');
+        Route::get('/conversation/{conversation}/messages', [ChatController::class, 'getMessages'])->name('conversation.messages');
+    });
+
+    // Authentication required routes
     Route::middleware(['auth'])->group(function () {
+        // 2FA routes (without verification)
         Route::prefix('2fa')->name('2fa.')->group(function () {
             Route::get('/', [TwoFactorChallengeController::class, 'create'])->name('challenge');
             Route::post('/', [TwoFactorChallengeController::class, 'store'])->name('verify');
@@ -67,18 +83,11 @@ Route::middleware('web')->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     });
 
-    // Protected routes that require 2FA
+    // Routes requiring 2FA
     Route::middleware(['auth', 'two-factor'])->group(function () {
-        // Existing protected routes
         Route::get('/welcome', [WelcomeController::class, 'newUser'])->name('welcome.new-user');
         Route::get('/welcome-back', [WelcomeBackController::class, 'index'])->name('welcome.back');
         
-        // Newsletter routes
-        Route::prefix('newsletter')->name('newsletter.')->group(function () {
-            Route::post('/subscribe', [NewsletterController::class, 'subscribe'])->name('subscribe');
-            Route::post('/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe');
-        });
-
         // Profile routes
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [ProfileController::class, 'show'])->name('show');
@@ -87,7 +96,7 @@ Route::middleware('web')->group(function () {
             Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
             Route::get('/security', [SecurityController::class, 'show'])->name('security');
 
-            // 2FA Profile Settings
+            // 2FA settings
             Route::prefix('2fa')->name('2fa.')->group(function () {
                 Route::get('/', [TwoFactorAuthController::class, 'show'])->name('show');
                 Route::post('/enable', [TwoFactorAuthController::class, 'enable'])->name('enable');
@@ -97,67 +106,24 @@ Route::middleware('web')->group(function () {
             });
         });
 
-        // Author routes
-        Route::prefix('authors')->name('authors.')->group(function () {
-            Route::get('/', [AuthorController::class, 'index'])->name('index');
-            Route::get('/{user}', [AuthorController::class, 'show'])->name('show');
-            Route::get('/dashboard', [AuthorController::class, 'dashboard'])->name('dashboard');
-            Route::get('/edit', [AuthorController::class, 'edit'])->name('edit');
-            Route::patch('/update', [AuthorController::class, 'update'])->name('update');
+        // Newsletter routes
+        Route::prefix('newsletter')->name('newsletter.')->group(function () {
+            Route::post('/subscribe', [NewsletterController::class, 'subscribe'])->name('subscribe');
+            Route::post('/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe');
         });
 
-        // Comment routes
-        Route::prefix('comments')->name('comments.')->group(function () {
-            Route::get('/{post}', [CommentController::class, 'index'])->name('index');
-            Route::middleware('throttle:60,1')->group(function () {
-                Route::post('/{post}', [CommentController::class, 'store'])->name('store');
-                Route::post('/{comment}/like', [CommentController::class, 'like'])->name('like');
-            });
-        });
-
-        // Lawyer routes
-        Route::middleware(['auth', IsLawyer::class])->prefix('lawyer')->name('lawyer.')->group(function () {
-            // Dashboard routes
-            Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
-            Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
-            
-            // Update these routes to match the frontend AJAX calls
-            Route::post('/conversations/bulk-delete', [LawyerDashboardController::class, 'bulkDelete'])
-                ->name('conversations.bulk-delete');
-            Route::post('/conversations/bulk-close', [LawyerDashboardController::class, 'bulkClose'])
-                ->name('conversations.bulk-close');
-            Route::delete('/conversations/{conversation}', [LawyerDashboardController::class, 'destroy'])
-                ->name('conversations.destroy');
-
-            // Chat routes
-            Route::get('/pending-conversations', [ChatController::class, 'getPendingConversations'])
-                ->name('pending-conversations');
-            Route::get('/active-conversations', [ChatController::class, 'getActiveConversations'])
-                ->name('active-conversations');
-            Route::post('/claim-conversation/{conversation}', [ChatController::class, 'claimConversation'])
-                ->name('claim-conversation');
-            Route::get('/conversation/{conversation}', [ChatController::class, 'showConversation'])
-                ->name('conversation.show');
-            Route::post('/send-message', [ChatController::class, 'lawyerSendMessage'])
-                ->name('send-message');
-            Route::get('/conversation/{conversation}/messages', [ChatController::class, 'getMessages'])
-                ->name('conversation.messages');
-        });
+        // Authors routes
+        Route::get('/authors', [AuthorController::class, 'index'])->name('authors.index');
+        Route::get('/authors/{user}', [AuthorController::class, 'show'])->name('authors.show');
     });
 
-    // Catch-all routes for posts and categories (must be last)
-    Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
-    Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
-
-    // Debug route to check pending conversations
-    Route::get('/debug/pending-conversations', function () {
-        return Conversation::where('status', 'pending')->with('messages')->get();
-    })->middleware(['auth', IsLawyer::class]);
-
-    // Chat routes (accessible to all)
+    // Chat API routes (public)
     Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
 
+    // Catch-all routes (must be last)
+    Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
+    Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
 });
 
 // Development only routes

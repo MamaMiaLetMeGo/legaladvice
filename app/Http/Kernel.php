@@ -62,6 +62,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'lawyer' => \App\Http\Middleware\IsLawyer::class,
         'two-factor' => \App\Http\Middleware\TwoFactorAuthentication::class,
+        'is_admin' => \App\Http\Middleware\IsAdmin::class,
     ];
 
     /**

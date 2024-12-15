@@ -46,10 +46,26 @@ class LoginRequest extends FormRequest
      */
     public function authenticate(): void
     {
-        if (!Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+        $this->ensureIsNotRateLimited();
+
+        try {
+            if (!Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => __('auth.failed'),
+                ]);
+            }
+
+            RateLimiter::clear($this->throttleKey());
+        } catch (\Exception $e) {
+            // Log the error and rethrow
+            \Log::error('Authentication error:', [
+                'error' => $e->getMessage(),
+                'user' => $this->email,
+                'ip' => $this->ip()
             ]);
+            throw $e;
         }
     }
 
@@ -82,5 +98,13 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Ensure CSRF token is present in the session
+        if (!$this->session()->has('_token')) {
+            $this->session()->regenerateToken();
+        }
     }
 }
