@@ -20,10 +20,8 @@ class ChatController extends Controller
     public function sendMessage(Request $request)
     {
         try {
-            Log::info('Message received', [
-                'request' => $request->all(),
-                'headers' => $request->headers->all()
-            ]);
+            // Log incoming request
+            \Log::info('Chat request received', $request->all());
 
             // Validate the request
             $validated = $request->validate([
@@ -78,14 +76,10 @@ class ChatController extends Controller
             ], 500);
 
         } catch (\Exception $e) {
-            Log::error('Error in sendMessage', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            \Log::error('Chat error: ' . $e->getMessage());
             return response()->json([
-                'error' => 'Failed to send message',
-                'details' => app()->environment('local') ? $e->getMessage() : null
+                'success' => false,
+                'error' => 'An error occurred while processing your request'
             ], 500);
         }
     }

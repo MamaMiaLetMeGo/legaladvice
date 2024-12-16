@@ -179,3 +179,7 @@ if (app()->environment('local')) {
         ]);
     });
 }
+
+Route::post('/chat/send', [ChatController::class, 'sendMessage'])
+    ->name('chat.send')
+    ->middleware(['web']);

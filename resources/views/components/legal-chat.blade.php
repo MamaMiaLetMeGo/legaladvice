@@ -274,8 +274,12 @@
                 try {
                     // Get CSRF token from meta tag
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    // Use the current origin to build the URL
+                    const baseUrl = window.location.origin;
+                    const url = `${baseUrl}/chat/send`; // Updated endpoint
 
-                    const response = await fetch('/test-chat', {
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -292,11 +296,17 @@
                     });
 
                     if (response.status === 419) {
+                        console.log('CSRF token mismatch. Reloading page...');
                         window.location.reload();
                         return;
                     }
 
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
                     const data = await response.json();
+                    console.log('Response received:', data); // Debug log
                     
                     if (data.success) {
                         this.conversationId = data.conversation_id;
@@ -307,7 +317,7 @@
                         this.addMessage('Sorry, I encountered an error. Please try again.');
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error details:', error); // More detailed error logging
                     this.hideTypingIndicator();
                     this.addMessage('Sorry, I encountered an error. Please try again.');
                 }
