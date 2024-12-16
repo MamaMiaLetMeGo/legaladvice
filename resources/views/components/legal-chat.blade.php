@@ -275,9 +275,9 @@
                     // Get CSRF token from meta tag
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     
-                    // Use the current origin to build the URL
+                    // Updated URL path to match the new route
                     const baseUrl = window.location.origin;
-                    const url = `${baseUrl}/chat/send`; // Updated endpoint
+                    const url = `${baseUrl}/chat/send-message`; // Updated to match new route
 
                     const response = await fetch(url, {
                         method: 'POST',
