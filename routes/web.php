@@ -145,6 +145,14 @@ Route::middleware('web')->group(function () {
         });
     });
 
+    // Add these before the catch-all routes (/{category:slug} routes)
+    Route::match(['get', 'post'], '/test-chat', function () {
+        if (request()->isMethod('post')) {
+            return app(ChatController::class)->sendMessage(request());
+        }
+        return view('test-chat');
+    })->name('test.chat');
+
     // Catch-all routes for posts and categories (must be last)
     Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
     Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');

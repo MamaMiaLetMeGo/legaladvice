@@ -2,21 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'conversation_id',
         'user_id',
         'content',
-        'ip_address'
+        'is_from_user'
     ];
 
-    protected $with = ['user'];
+    protected $casts = [
+        'is_from_user' => 'boolean'
+    ];
 
     public function conversation()
     {
@@ -25,8 +24,6 @@ class Message extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class)->withDefault([
-            'name' => 'Guest'
-        ]);
+        return $this->belongsTo(User::class);
     }
 }
