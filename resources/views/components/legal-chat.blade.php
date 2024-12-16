@@ -72,6 +72,13 @@
 
 <!-- JavaScript using Alpine.js -->
 <script>
+    // Define getCookie function outside the component
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
     function legalChat() {
         return {
             isWaitingForLawyer: false,
@@ -274,11 +281,10 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json',
-                            // Add these additional headers
                             'X-Requested-With': 'XMLHttpRequest',
                             'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
                         },
-                        credentials: 'include', // Important for cookies
+                        credentials: 'include',
                         body: JSON.stringify({ 
                             message: message,
                             conversation_id: this.conversationId
@@ -286,7 +292,6 @@
                     });
 
                     if (response.status === 419) {
-                        // Refresh the page to get a new CSRF token
                         window.location.reload();
                         return;
                     }
@@ -339,13 +344,6 @@
                 messageDiv.innerHTML = avatar + message;
                 messagesDiv.appendChild(messageDiv);
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            },
-
-            // Add this helper function to get cookies
-            getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
             },
 
             // ... (rest of your functions from before)
