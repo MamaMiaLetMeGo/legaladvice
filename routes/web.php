@@ -153,10 +153,10 @@ Route::middleware('web')->group(function () {
         return view('test-chat');
     })->name('test.chat');
 
-    // Consolidate chat routes in one place
+    // Consolidate chat routes in one place (with unique names)
     Route::prefix('chat')->name('chat.')->group(function () {
-        Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('send');
-        Route::get('/conversation', [ChatController::class, 'getConversation'])->name('conversation');
+        Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('message.send');
+        Route::get('/conversation', [ChatController::class, 'getConversation'])->name('conversation.get');
     });
 
     // Keep catch-all routes last
