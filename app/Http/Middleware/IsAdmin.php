@@ -11,18 +11,19 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        Log::info('IsAdmin middleware check', [
+        \Log::info('IsAdmin middleware check', [
             'user' => $request->user()?->email,
+            'is_admin' => $request->user()?->role === 'admin',
             'role' => $request->user()?->role,
-            'isAdmin' => $request->user()?->isAdmin()
+            'path' => $request->path()
         ]);
 
-        if (!$request->user() || !$request->user()->isAdmin()) {
-            Log::warning('Unauthorized admin access attempt', [
+        if (!$request->user() || $request->user()->role !== 'admin') {
+            \Log::warning('Unauthorized admin access attempt', [
                 'user' => $request->user()?->email,
                 'path' => $request->path()
             ]);
-            abort(403, 'Unauthorized access.');
+            return redirect()->route('home');
         }
 
         return $next($request);

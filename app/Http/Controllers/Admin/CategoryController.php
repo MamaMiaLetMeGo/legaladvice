@@ -20,21 +20,27 @@ class CategoryController extends Controller
     public function index()
     {
         try {
-            Log::info('CategoryController@index started');
+            \Log::info('CategoryController@index started', [
+                'user' => auth()->user()?->email,
+                'role' => auth()->user()?->role
+            ]);
             
             $categories = Category::withCount(['posts' => function($query) {
-                if (method_exists(Post::class, 'scopePublished')) {
+                if (method_exists($query->getModel(), 'scopePublished')) {
                     $query->published();
                 }
             }])
             ->orderBy('name')
             ->paginate(10);
-            
-            Log::info('Categories retrieved', ['count' => $categories->count()]);
-            
+
+            \Log::info('Categories retrieved', [
+                'count' => $categories->count(),
+                'view_exists' => view()->exists('admin.categories.index')
+            ]);
+
             return view('admin.categories.index', compact('categories'));
         } catch (\Exception $e) {
-            Log::error('Error in CategoryController@index', [
+            \Log::error('Error in CategoryController@index', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

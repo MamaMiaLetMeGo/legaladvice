@@ -25,6 +25,9 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\LawyerMiddleware;
 
+// Near the top of your web.php file
+require __DIR__.'/admin.php';
+
 Route::middleware(['web'])->group(function () {
     // Auth routes
     require __DIR__.'/auth.php';
@@ -127,9 +130,6 @@ Route::middleware('web')->group(function () {
         Route::get('/authors/{user}', [AuthorController::class, 'show'])->name('authors.show');
     });
 
-    // Chat API routes (public)
-    Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
 
     // Catch-all routes (must be last)
     Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
