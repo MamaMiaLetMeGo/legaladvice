@@ -153,7 +153,13 @@ Route::middleware('web')->group(function () {
         return view('test-chat');
     })->name('test.chat');
 
-    // Catch-all routes for posts and categories (must be last)
+    // Consolidate chat routes in one place
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('send');
+        Route::get('/conversation', [ChatController::class, 'getConversation'])->name('conversation');
+    });
+
+    // Keep catch-all routes last
     Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
     Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
 
@@ -162,9 +168,12 @@ Route::middleware('web')->group(function () {
         return Conversation::where('status', 'pending')->with('messages')->get();
     })->middleware(['auth', IsLawyer::class]);
 
-    // Chat routes (accessible to all)
-    Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
+    // Add this route for CSRF token refresh
+    Route::get('/csrf-token', function () {
+        return response()->json([
+            'token' => csrf_token()
+        ]);
+    });
 
 });
 
@@ -179,7 +188,3 @@ if (app()->environment('local')) {
         ]);
     });
 }
-
-Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])
-    ->name('chat.send.message')
-    ->middleware(['web']);

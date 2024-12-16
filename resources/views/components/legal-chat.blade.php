@@ -1,4 +1,7 @@
 <div x-data="legalChat()" x-init="window.chatComponent = $data" class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <!-- Add this hidden input with CSRF token -->
+    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+    
     <!-- Header -->
     <div class="bg-blue-600 p-3">
         <h1 class="text-white text-lg font-bold">Legal AI Assistant</h1>
@@ -272,12 +275,11 @@
                 this.showTypingIndicator();
 
                 try {
-                    // Get CSRF token from meta tag
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    // Get CSRF token from the hidden input
+                    const token = document.querySelector('input[name="_token"]').value;
                     
-                    // Updated URL path to match the new route
                     const baseUrl = window.location.origin;
-                    const url = `${baseUrl}/chat/send-message`; // Updated to match new route
+                    const url = `${baseUrl}/chat/send-message`;
 
                     const response = await fetch(url, {
                         method: 'POST',
@@ -285,28 +287,25 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include',
+                        credentials: 'same-origin', // Changed from 'include' to 'same-origin'
                         body: JSON.stringify({ 
                             message: message,
-                            conversation_id: this.conversationId
+                            conversation_id: this.conversationId,
+                            _token: token // Include token in the body as well
                         })
                     });
 
                     if (response.status === 419) {
-                        console.log('CSRF token mismatch. Reloading page...');
-                        window.location.reload();
+                        // Instead of reloading, try to get a fresh token
+                        await this.refreshCsrfToken();
+                        // Retry the message send
+                        this.sendMessage();
                         return;
                     }
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
                     const data = await response.json();
-                    console.log('Response received:', data); // Debug log
                     
                     if (data.success) {
                         this.conversationId = data.conversation_id;
@@ -317,9 +316,26 @@
                         this.addMessage('Sorry, I encountered an error. Please try again.');
                     }
                 } catch (error) {
-                    console.error('Error details:', error); // More detailed error logging
+                    console.error('Error details:', error);
                     this.hideTypingIndicator();
                     this.addMessage('Sorry, I encountered an error. Please try again.');
+                }
+            },
+
+            // Add method to refresh CSRF token
+            async refreshCsrfToken() {
+                try {
+                    const response = await fetch('/csrf-token', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    const data = await response.json();
+                    // Update the hidden input with new token
+                    document.querySelector('input[name="_token"]').value = data.token;
+                    return data.token;
+                } catch (error) {
+                    console.error('Error refreshing CSRF token:', error);
+                    return null;
                 }
             },
 
