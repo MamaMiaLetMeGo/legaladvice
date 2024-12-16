@@ -34,7 +34,7 @@ class User extends Authenticatable
         'bio',                 // Add if you want author bios
         'profile_image',       // Add if you want author images
         'social_links',
-        'is_admin',
+        'role',
     ];
 
     /**
@@ -57,7 +57,6 @@ class User extends Authenticatable
         'password' => 'hashed',
         'is_lawyer' => 'boolean',
         'social_links' => 'array',    // For JSON storage of social media links
-        'is_admin' => 'boolean',
         'two_factor_enabled' => 'boolean',
         'two_factor_confirmed_at' => 'datetime',
         'login_code_expires_at' => 'datetime',
@@ -205,9 +204,17 @@ class User extends Authenticatable
         return $this->publishedPosts()->exists();
     }
 
-    public function isAdmin()
+    public function isAdmin(): bool
     {
-        return $this->is_admin;
+        return $this->role === 'admin';
+    }
+
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
     }
 
     public function newsletterSubscription()

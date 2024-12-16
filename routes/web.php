@@ -23,6 +23,10 @@ use App\Http\Middleware\IsLawyer;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
+use App\Http\Middleware\LawyerMiddleware;
+
+// Near the top of your web.php file
+require __DIR__.'/admin.php';
 
 Route::middleware(['web'])->group(function () {
     // Auth routes
@@ -71,7 +75,7 @@ Route::middleware('web')->group(function () {
     })->name('pricing');
 
     // Lawyer routes (protected, specific prefix)
-    Route::middleware(['auth', IsLawyer::class])->prefix('lawyer')->name('lawyer.')->group(function () {
+    Route::middleware(['auth', LawyerMiddleware::class])->prefix('lawyer')->name('lawyer.')->group(function () {
         Route::get('/dashboard', [LawyerDashboardController::class, 'index'])->name('dashboard');
         Route::get('/stats', [LawyerDashboardController::class, 'getStats'])->name('stats');
         Route::post('/conversations/bulk-delete', [LawyerDashboardController::class, 'bulkDelete'])->name('conversations.bulk-delete');
@@ -126,9 +130,6 @@ Route::middleware('web')->group(function () {
         Route::get('/authors/{user}', [AuthorController::class, 'show'])->name('authors.show');
     });
 
-    // Chat API routes (public)
-    Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
 
     // Catch-all routes (must be last)
     Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
