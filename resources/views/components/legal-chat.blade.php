@@ -265,18 +265,31 @@
                 this.showTypingIndicator();
 
                 try {
+                    // Get CSRF token from meta tag
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
                     const response = await fetch('/test-chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            // Add these additional headers
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-XSRF-TOKEN': getCookie('XSRF-TOKEN')
                         },
+                        credentials: 'include', // Important for cookies
                         body: JSON.stringify({ 
                             message: message,
                             conversation_id: this.conversationId
                         })
                     });
+
+                    if (response.status === 419) {
+                        // Refresh the page to get a new CSRF token
+                        window.location.reload();
+                        return;
+                    }
 
                     const data = await response.json();
                     
@@ -326,6 +339,13 @@
                 messageDiv.innerHTML = avatar + message;
                 messagesDiv.appendChild(messageDiv);
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            },
+
+            // Add this helper function to get cookies
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
             },
 
             // ... (rest of your functions from before)
