@@ -263,15 +263,17 @@
                     input.value = '';
                     this.showTypingIndicator();
 
-                    // Get CSRF token from meta tag or window variable
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
-                        || window.csrfToken;
+                    // Get all possible CSRF tokens
+                    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const windowToken = window.csrfToken;
+                    const token = metaToken || windowToken;
 
                     if (!token) {
-                        throw new Error('CSRF token not found - please refresh the page');
+                        location.reload(); // Force a page reload to get fresh tokens
+                        return;
                     }
 
-                    // Get the XSRF token from cookie if available
+                    // Get the XSRF token from cookie
                     const xsrfToken = document.cookie.split('; ')
                         .find(row => row.startsWith('XSRF-TOKEN='))
                         ?.split('=')[1];
@@ -282,7 +284,7 @@
                         'Accept': 'application/json',
                     };
 
-                    // Add CSRF token in multiple ways to ensure it gets through
+                    // Add all possible CSRF tokens
                     if (token) headers['X-CSRF-TOKEN'] = token;
                     if (xsrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
 
@@ -306,8 +308,9 @@
                     }
 
                     if (!response.ok) {
-                        if (response.status === 419) {
-                            throw new Error('Session expired - please refresh the page');
+                        if (response.status === 419 || (data?.code === 'csrf_token_mismatch')) {
+                            location.reload(); // Force a page reload to get fresh tokens
+                            return;
                         }
                         throw new Error(data.error || `Server error: ${response.status}`);
                     }
@@ -321,7 +324,11 @@
 
                 } catch (error) {
                     console.error('Chat error:', error);
-                    this.addMessage(`Error: ${error.message}. ${error.message.includes('refresh') ? '' : 'Please try again or contact support if the problem persists.'}`);
+                    if (error.message.includes('CSRF') || error.message.includes('session')) {
+                        location.reload();
+                        return;
+                    }
+                    this.addMessage(`Error: ${error.message}. Please try again or contact support if the problem persists.`);
                 } finally {
                     this.hideTypingIndicator();
                 }
