@@ -104,22 +104,10 @@
                 document.getElementById('typing-indicator').style.display = 'none';
             },
 
-            async refreshCsrfToken() {
-                try {
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    if (!token) {
-                        throw new Error('CSRF token not found');
-                    }
-                    return token;
-                } catch (error) {
-                    console.error('Error getting CSRF token:', error);
-                    throw error;
-                }
-            },
-
             async makeRequest(url, data) {
                 try {
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    // Get CSRF token from meta tag or window variable
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || window.csrfToken;
                     if (!token) {
                         throw new Error('CSRF token not found');
                     }
@@ -129,17 +117,22 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-XSRF-TOKEN': this.getCookie('XSRF-TOKEN') || ''
                         },
-                        credentials: 'same-origin',
+                        credentials: 'include',
                         body: JSON.stringify(data)
                     });
 
                     if (!response.ok) {
                         if (response.status === 419) {
-                            // Refresh the page if CSRF token is invalid
-                            window.location.reload();
-                            throw new Error('Session expired. Please try again.');
+                            // Try to refresh the page once
+                            if (!window.hasAttemptedRefresh) {
+                                window.hasAttemptedRefresh = true;
+                                window.location.reload();
+                                return;
+                            }
+                            throw new Error('Session expired. Please refresh the page and try again.');
                         }
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -148,6 +141,26 @@
                     return response.json();
                 } catch (error) {
                     console.error('Request failed:', error);
+                    throw error;
+                }
+            },
+
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            },
+
+            async refreshCsrfToken() {
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (!token) {
+                        throw new Error('CSRF token not found');
+                    }
+                    return token;
+                } catch (error) {
+                    console.error('Error getting CSRF token:', error);
                     throw error;
                 }
             },
@@ -179,7 +192,11 @@
                     }
                 } catch (error) {
                     console.error('Chat error:', error);
-                    this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
+                    if (error.message.includes('Session expired')) {
+                        this.addMessage('Your session has expired. Please refresh the page and try again.', false);
+                    } else {
+                        this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
+                    }
                 } finally {
                     this.hideTypingIndicator();
                 }

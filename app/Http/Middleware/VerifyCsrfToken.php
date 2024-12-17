@@ -50,32 +50,20 @@ class VerifyCsrfToken extends Middleware
      */
     protected function tokensMatch($request)
     {
-        $token = $this->getTokenFromRequest($request);
-        $sessionToken = $request->session()->token();
-
-        return is_string($token) && 
-               is_string($sessionToken) && 
-               hash_equals($sessionToken, $token);
-    }
-
-    /**
-     * Get the CSRF token from the request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return string|null
-     */
-    protected function getTokenFromRequest($request)
-    {
         $token = $request->input('_token') ?: $request->header('X-CSRF-TOKEN');
 
         if (!$token && $header = $request->header('X-XSRF-TOKEN')) {
-            try {
-                $token = $this->encrypter->decrypt($header, static::serialized());
-            } catch (\Exception $e) {
-                $token = '';
+            $token = urldecode($header);
+        }
+
+        if (!$token && $header = $request->header('Authorization')) {
+            if (strpos($header, 'Bearer ') === 0) {
+                $token = substr($header, 7);
             }
         }
 
-        return $token;
+        return is_string($token) &&
+               is_string($request->session()->token()) &&
+               hash_equals($request->session()->token(), $token);
     }
 }
