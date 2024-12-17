@@ -106,100 +106,73 @@
 
             async refreshCsrfToken() {
                 try {
-                    const response = await fetch('/sanctum/csrf-cookie', {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Failed to refresh CSRF token');
-                    }
-                    
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                     if (!token) {
-                        throw new Error('CSRF token not found after refresh');
+                        throw new Error('CSRF token not found');
                     }
-                    
                     return token;
                 } catch (error) {
-                    console.error('Error refreshing CSRF token:', error);
+                    console.error('Error getting CSRF token:', error);
                     throw error;
                 }
             },
 
-            async makeRequest(url, data, token) {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify(data)
-                });
+            async makeRequest(url, data) {
+                try {
+                    const token = await this.refreshCsrfToken();
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(data)
+                    });
 
-                if (response.status === 419) {
-                    // CSRF token mismatch, try to refresh
-                    const newToken = await this.refreshCsrfToken();
-                    return this.makeRequest(url, data, newToken);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    return response.json();
+                } catch (error) {
+                    console.error('Request failed:', error);
+                    throw error;
                 }
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                }
-
-                return response.json();
             },
 
             async sendMessage() {
                 const input = document.getElementById('message-input');
                 const message = input.value.trim();
+                
                 if (!message) return;
-
+                
+                // Clear input and add user message immediately
+                input.value = '';
+                this.addMessage(message, true);
+                
                 try {
-                    // Store the message temporarily
-                    const tempMessage = message;
-                    input.value = '';
-
-                    // Get CSRF token
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    if (!token) {
-                        throw new Error('CSRF token not found');
-                    }
-
-                    // Add user message to chat
-                    this.addMessage(tempMessage, true);
                     this.showTypingIndicator();
-
-                    // Send message to server
-                    const data = {
-                        message: tempMessage,
+                    
+                    const response = await this.makeRequest('/chat/send', {
+                        message: message,
                         conversation_id: this.conversationId
-                    };
-
-                    const response = await this.makeRequest('/chat/send', data, token);
-
-                    if (response.success) {
+                    });
+                    
+                    if (response.conversation_id) {
                         this.conversationId = response.conversation_id;
-                        this.addMessage(response.message);
-                    } else {
-                        throw new Error(response.error || 'Failed to send message');
                     }
-
+                    
+                    if (response.message) {
+                        this.addMessage(response.message, false);
+                    }
+                    
                 } catch (error) {
                     console.error('Chat error:', error);
-                    let errorMessage = 'An error occurred. Please try again.';
-                    
-                    if (error.message.includes('CSRF token')) {
-                        errorMessage = 'Session expired. Please refresh the page.';
-                    } else if (error.message.includes('Network Error')) {
-                        errorMessage = 'Network error. Please check your connection.';
-                    }
-                    
-                    this.addMessage(errorMessage);
+                    this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
                 } finally {
                     this.hideTypingIndicator();
                 }
