@@ -31,139 +31,67 @@ class ChatController extends Controller
                 'user_agent' => $request->header('User-Agent')
             ]);
 
-            // Ensure session is started
-            if (!$request->hasSession()) {
-                Log::error('Session not active', [
-                    'session_id' => session()->getId()
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session error',
-                    'details' => 'Please refresh the page and try again.'
-                ], 401);
+            // Start session if not already started
+            if (!$request->session()->isStarted()) {
+                $request->session()->start();
             }
 
             // Validate the request
             $validated = $request->validate([
                 'message' => 'required|string|max:1000',
-                'conversation_id' => 'nullable|exists:conversations,id'
-            ]);
-
-            // Get user ID and session ID
-            $userId = auth()->id();
-            $sessionId = session()->getId();
-            $isGuest = !$userId;
-
-            Log::info('User info', [
-                'user_id' => $userId,
-                'session_id' => $sessionId,
-                'is_guest' => $isGuest,
-                'ip_address' => $request->ip()
+                'conversation_id' => 'nullable|string'
             ]);
 
             // Get or create conversation
             $conversation = null;
-            if ($request->conversation_id) {
-                $conversation = Conversation::findOrFail($request->conversation_id);
-            } else {
+            if (!empty($validated['conversation_id'])) {
+                $conversation = Conversation::find($validated['conversation_id']);
+            }
+            
+            if (!$conversation) {
                 $conversation = Conversation::create([
-                    'user_id' => $userId,
-                    'status' => 'active',
-                    'session_id' => $sessionId,
-                    'is_guest' => $isGuest,
-                    'ip_address' => $request->ip()
+                    'user_id' => auth()->check() ? auth()->id() : null,
+                    'session_id' => session()->getId(),
+                    'status' => 'active'
                 ]);
             }
 
-            Log::info('Conversation created/found', ['conversation' => $conversation]);
-
-            // Save user message
-            $userMessage = $conversation->messages()->create([
+            // Create user message
+            $userMessage = new Message([
                 'content' => $validated['message'],
-                'user_id' => $userId,
-                'is_from_user' => true,
-                'session_id' => $sessionId,
-                'is_guest' => $isGuest,
-                'ip_address' => $request->ip()
+                'role' => 'user',
+                'session_id' => session()->getId()
             ]);
-
-            Log::info('User message saved', ['message' => $userMessage]);
-
-            // Get conversation context
-            $context = $conversation->messages()
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get()
-                ->map(function ($msg) {
-                    return [
-                        'role' => $msg->is_from_user ? 'user' : 'assistant',
-                        'content' => $msg->content
-                    ];
-                })
-                ->reverse()
-                ->values()
-                ->all();
+            $conversation->messages()->save($userMessage);
 
             // Get AI response
-            $aiResponse = $this->openAIService->generateResponse(
-                $validated['message'],
-                $context
-            );
+            $aiResponse = $this->openAIService->generateResponse($validated['message'], $conversation);
 
-            if (!$aiResponse) {
-                throw new \Exception('Failed to generate AI response');
-            }
-
-            Log::info('AI response received', ['response' => $aiResponse]);
-
-            // Save AI response
-            $aiMessage = $conversation->messages()->create([
+            // Create AI message
+            $aiMessage = new Message([
                 'content' => $aiResponse,
-                'is_from_user' => false,
-                'session_id' => $sessionId,
-                'is_guest' => false,
-                'ip_address' => $request->ip()
+                'role' => 'assistant',
+                'session_id' => session()->getId()
             ]);
+            $conversation->messages()->save($aiMessage);
 
             return response()->json([
                 'success' => true,
-                'conversation_id' => $conversation->id,
-                'message' => $aiMessage->content
+                'message' => $aiResponse,
+                'conversation_id' => $conversation->id
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error', [
-                'errors' => $e->errors(),
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'Invalid input',
-                'details' => $e->errors()
-            ], 422);
-            
         } catch (\Exception $e) {
             Log::error('Error in sendMessage', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            $errorMessage = 'An unexpected error occurred';
-            $statusCode = 500;
-
-            if (str_contains($e->getMessage(), 'API key')) {
-                $errorMessage = 'AI service configuration error. Please contact support.';
-                $statusCode = 503;
-            } elseif (str_contains($e->getMessage(), 'Rate limit')) {
-                $errorMessage = 'Too many requests. Please wait a moment before trying again.';
-                $statusCode = 429;
-            }
-
             return response()->json([
                 'success' => false,
-                'error' => $errorMessage,
-                'details' => app()->environment('local') ? $e->getMessage() : $errorMessage
-            ], $statusCode);
+                'error' => 'An error occurred while processing your message.',
+                'debug' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
     }
 

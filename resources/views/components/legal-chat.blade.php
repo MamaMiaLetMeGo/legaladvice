@@ -117,8 +117,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-XSRF-TOKEN': this.getCookie('XSRF-TOKEN') || ''
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
                         credentials: 'include',
                         body: JSON.stringify(data)
@@ -138,10 +137,52 @@
                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                     }
 
-                    return response.json();
+                    const responseData = await response.json();
+                    if (!responseData.success) {
+                        throw new Error(responseData.error || 'Request failed');
+                    }
+                    return responseData;
+
                 } catch (error) {
                     console.error('Request failed:', error);
                     throw error;
+                }
+            },
+
+            async sendMessage() {
+                const input = document.getElementById('message-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+                
+                // Clear input and add user message immediately
+                input.value = '';
+                this.addMessage(message, true);
+                
+                try {
+                    this.showTypingIndicator();
+                    
+                    const response = await this.makeRequest('/chat/send', {
+                        message: message,
+                        conversation_id: this.conversationId || null
+                    });
+                    
+                    if (response.conversation_id) {
+                        this.conversationId = response.conversation_id;
+                    }
+                    
+                    if (response.message) {
+                        this.addMessage(response.message, false);
+                    }
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    if (error.message.includes('Session expired')) {
+                        this.addMessage('Your session has expired. Please refresh the page and try again.', false);
+                    } else {
+                        this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
+                    }
+                } finally {
+                    this.hideTypingIndicator();
                 }
             },
 
@@ -162,43 +203,6 @@
                 } catch (error) {
                     console.error('Error getting CSRF token:', error);
                     throw error;
-                }
-            },
-
-            async sendMessage() {
-                const input = document.getElementById('message-input');
-                const message = input.value.trim();
-                
-                if (!message) return;
-                
-                // Clear input and add user message immediately
-                input.value = '';
-                this.addMessage(message, true);
-                
-                try {
-                    this.showTypingIndicator();
-                    
-                    const response = await this.makeRequest('/chat/send', {
-                        message: message,
-                        conversation_id: this.conversationId
-                    });
-                    
-                    if (response.conversation_id) {
-                        this.conversationId = response.conversation_id;
-                    }
-                    
-                    if (response.message) {
-                        this.addMessage(response.message, false);
-                    }
-                } catch (error) {
-                    console.error('Chat error:', error);
-                    if (error.message.includes('Session expired')) {
-                        this.addMessage('Your session has expired. Please refresh the page and try again.', false);
-                    } else {
-                        this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
-                    }
-                } finally {
-                    this.hideTypingIndicator();
                 }
             },
 

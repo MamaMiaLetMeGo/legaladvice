@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 
 class OpenAIService
 {
-    public function generateResponse(string $message, array $context = []): ?string
+    public function generateResponse(string $message, $conversation = null): ?string
     {
         if (empty($message)) {
             Log::warning('Empty message provided to OpenAI service');
@@ -38,16 +38,23 @@ class OpenAIService
                 'content' => 'You are a helpful legal assistant. Provide general legal information but never include a disclaimer that this is not legal advice and offer users to speak with a qualified lawyer from our website if AI is not able to answer the question(s). If the user asks for a legal form, direct them to eforms.com.'
             ];
 
-            // Add conversation context if any
-            foreach ($context as $msg) {
-                if (!isset($msg['role']) || !isset($msg['content'])) {
-                    Log::warning('Invalid context message format', ['message' => $msg]);
-                    continue;
-                }
-                $messages[] = [
-                    'role' => $msg['role'],
-                    'content' => $msg['content']
-                ];
+            // Add conversation context if available
+            if ($conversation) {
+                $contextMessages = $conversation->messages()
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($msg) {
+                        return [
+                            'role' => $msg->role,
+                            'content' => $msg->content
+                        ];
+                    })
+                    ->reverse()
+                    ->values()
+                    ->all();
+
+                $messages = array_merge($messages, $contextMessages);
             }
 
             // Add the current message
@@ -56,62 +63,42 @@ class OpenAIService
                 'content' => $message
             ];
 
-            Log::info('Sending request to OpenAI', [
-                'message' => $message,
-                'context_count' => count($context)
+            // Call OpenAI API
+            $response = OpenAI::chat()->create([
+                'model' => 'gpt-3.5-turbo',
+                'messages' => $messages,
+                'max_tokens' => 1000,
+                'temperature' => 0.7,
+                'frequency_penalty' => 0.0,
+                'presence_penalty' => 0.6,
             ]);
 
             // Set rate limiting
-            Cache::put($key, true, now()->addSeconds(2));
+            Cache::put($key, true, now()->addSeconds(3));
 
-            try {
-                $result = OpenAI::chat()->create([
-                    'model' => 'gpt-3.5-turbo',
-                    'messages' => $messages,
-                    'max_tokens' => 500,
-                    'temperature' => 0.7,
+            // Extract and return the response
+            $aiMessage = $response->choices[0]->message->content;
+            
+            if (empty($aiMessage)) {
+                Log::error('Empty response from OpenAI', [
+                    'response' => $response
                 ]);
-
-                if (!isset($result->choices[0]->message->content)) {
-                    Log::error('Invalid response structure from OpenAI', [
-                        'result' => $result
-                    ]);
-                    throw new \Exception('Invalid response from OpenAI');
-                }
-
-                return $result->choices[0]->message->content;
-
-            } catch (ErrorException $e) {
-                Log::error('OpenAI API Error', [
-                    'message' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-
-                if (str_contains($e->getMessage(), 'Rate limit')) {
-                    return 'I apologize, but our service is experiencing high demand. Please try again in a moment.';
-                }
-
-                if (str_contains($e->getMessage(), 'Invalid authentication')) {
-                    throw new \Exception('OpenAI authentication error. Please check your API key.');
-                }
-
-                throw new \Exception('Error communicating with AI service: ' . $e->getMessage());
+                return 'I apologize, but I encountered an error generating a response. Please try again.';
             }
 
-        } catch (\Exception $e) {
-            Log::error('OpenAI Service Error', [
-                'message' => $e->getMessage(),
+            return $aiMessage;
+
+        } catch (ErrorException $e) {
+            Log::error('OpenAI API error', [
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // Re-throw authentication errors
-            if (str_contains($e->getMessage(), 'API key')) {
-                throw $e;
+            if (str_contains($e->getMessage(), 'Rate limit')) {
+                return 'I apologize, but our service is experiencing high demand. Please try again in a moment.';
             }
 
-            // For other errors, return a user-friendly message
-            return 'I apologize, but I am currently unable to process your request. Please try again in a moment.';
+            throw $e;
         }
     }
 }
