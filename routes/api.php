@@ -13,8 +13,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware(['web', 'session'])->group(function () {
     Route::prefix('chat')->group(function () {
         Route::post('/send', [ChatController::class, 'sendMessage'])
-            ->name('chat.send');
+            ->name('api.chat.send');
         Route::get('/conversation', [ChatController::class, 'getConversation'])
-            ->name('chat.conversation');
+            ->name('api.chat.conversation');
     });
 });
