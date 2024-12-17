@@ -1,8 +1,8 @@
 <div x-data="legalChat()" x-init="window.chatComponent = $data" class="bg-white rounded-lg shadow-lg overflow-hidden">
     <!-- Header -->
     <div class="bg-blue-600 p-3">
-        <h1 class="text-white text-lg font-bold">Legal AI Assistant</h1>
-        <p class="text-blue-100 text-xs">Ask any legal question</p>
+        <h1 class="text-white text-lg font-bold">Legal Assistant</h1>
+        <p class="text-blue-100 text-xs">Ask me any legal question</p>
     </div>
 
     <!-- Chat Messages -->
