@@ -9,6 +9,7 @@ use App\Models\Message;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
 class ChatController extends Controller
 {
@@ -22,24 +23,10 @@ class ChatController extends Controller
     public function sendMessage(Request $request)
     {
         try {
-            // Log request details for debugging
-            Log::info('Message request received', [
-                'request_data' => $request->all(),
-                'headers' => $request->headers->all(),
-                'session_id' => session()->getId(),
-                'has_session' => $request->hasSession(),
-                'user_agent' => $request->header('User-Agent')
-            ]);
-
-            // Start session if not already started
-            if (!$request->session()->isStarted()) {
-                $request->session()->start();
-            }
-
             // Validate the request
             $validated = $request->validate([
                 'message' => 'required|string|max:1000',
-                'conversation_id' => 'nullable|string'
+                'conversation_id' => 'nullable|exists:conversations,id'
             ]);
 
             // Get or create conversation
@@ -81,10 +68,21 @@ class ChatController extends Controller
                 'conversation_id' => $conversation->id
             ]);
 
+        } catch (ValidationException $e) {
+            Log::error('Validation error in sendMessage', [
+                'errors' => $e->errors(),
+                'request' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid input provided.',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Error in sendMessage', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
             ]);
 
             return response()->json([
