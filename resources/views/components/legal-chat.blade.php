@@ -257,41 +257,56 @@
                 const message = input.value.trim();
                 if (!message) return;
 
-                // Add user message to chat
-                this.addMessage(message, true);
-                input.value = '';
-
-                // Show typing indicator
-                this.showTypingIndicator();
-
                 try {
-                    const response = await fetch('/test-chat', {
+                    // Add user message to chat immediately
+                    this.addMessage(message, true);
+                    input.value = '';
+                    this.showTypingIndicator();
+
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    if (!token) {
+                        throw new Error('CSRF token not found');
+                    }
+
+                    const response = await fetch('/api/chat/send', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ 
-                            message: message,
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            message,
                             conversation_id: this.conversationId
                         })
                     });
 
-                    const data = await response.json();
-                    
+                    let data;
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        throw new Error('Server returned non-JSON response');
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(data.error || `Server error: ${response.status}`);
+                    }
+
                     if (data.success) {
                         this.conversationId = data.conversation_id;
-                        this.hideTypingIndicator();
                         this.addMessage(data.message);
                     } else {
-                        this.hideTypingIndicator();
-                        this.addMessage('Sorry, I encountered an error. Please try again.');
+                        throw new Error(data.error || 'Unknown error occurred');
                     }
+
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Chat error:', error);
+                    this.addMessage(`Error: ${error.message}. Please try again or contact support if the problem persists.`);
+                } finally {
                     this.hideTypingIndicator();
-                    this.addMessage('Sorry, I encountered an error. Please try again.');
                 }
             },
 

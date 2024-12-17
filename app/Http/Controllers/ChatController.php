@@ -59,24 +59,33 @@ class ChatController extends Controller
 
             Log::info('AI response received', ['response' => $aiResponse]);
 
-            if ($aiResponse) {
-                // Save AI response
-                $aiMessage = $conversation->messages()->create([
-                    'content' => $aiResponse,
-                    'is_from_user' => false
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'conversation_id' => $conversation->id,
-                    'message' => $aiMessage->content
-                ]);
+            if (!$aiResponse) {
+                throw new \Exception('Failed to generate AI response');
             }
 
-            return response()->json([
-                'error' => 'Failed to generate response'
-            ], 500);
+            // Save AI response
+            $aiMessage = $conversation->messages()->create([
+                'content' => $aiResponse,
+                'is_from_user' => false
+            ]);
 
+            return response()->json([
+                'success' => true,
+                'conversation_id' => $conversation->id,
+                'message' => $aiMessage->content
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error', [
+                'errors' => $e->errors(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid input',
+                'details' => $e->errors()
+            ], 422);
+            
         } catch (\Exception $e) {
             Log::error('Error in sendMessage', [
                 'error' => $e->getMessage(),
@@ -84,8 +93,9 @@ class ChatController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'Failed to send message',
-                'details' => app()->environment('local') ? $e->getMessage() : null
+                'success' => false,
+                'error' => 'Failed to process message',
+                'details' => app()->environment('local') ? $e->getMessage() : 'An unexpected error occurred'
             ], 500);
         }
     }

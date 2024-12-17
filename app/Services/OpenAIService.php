@@ -4,11 +4,17 @@ namespace App\Services;
 
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Log;
+use OpenAI\Exceptions\ErrorException;
 
 class OpenAIService
 {
     public function generateResponse(string $message, array $context = []): ?string
     {
+        if (!config('openai.api_key')) {
+            Log::error('OpenAI API key not configured');
+            throw new \Exception('OpenAI API key not configured');
+        }
+
         try {
             $messages = [];
             
@@ -32,6 +38,11 @@ class OpenAIService
                 'content' => $message
             ];
 
+            Log::info('Sending request to OpenAI', [
+                'message' => $message,
+                'context_count' => count($context)
+            ]);
+
             $result = OpenAI::chat()->create([
                 'model' => 'gpt-3.5-turbo',
                 'messages' => $messages,
@@ -39,14 +50,24 @@ class OpenAIService
                 'temperature' => 0.7,
             ]);
 
+            if (!isset($result->choices[0]->message->content)) {
+                throw new \Exception('Invalid response from OpenAI');
+            }
+
             return $result->choices[0]->message->content;
 
-        } catch (\Exception $e) {
-            Log::error('OpenAI Error: ' . $e->getMessage(), [
-                'message' => $message,
-                'context' => $context
+        } catch (ErrorException $e) {
+            Log::error('OpenAI API Error', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode()
             ]);
-            return null;
+            throw new \Exception('Error communicating with AI service: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('OpenAI Service Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 }

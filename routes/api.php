@@ -10,12 +10,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Chat routes with middleware
-Route::prefix('chat')
-    ->middleware(['web']) // This ensures session state and CSRF protection
-    ->group(function () {
-        Route::post('/send', [ChatController::class, 'send'])
-            ->name('chat.send'); // Adding a name makes it easier to reference the route
-            
+Route::middleware(['web'])->group(function () {
+    Route::prefix('chat')->group(function () {
+        Route::post('/send', [ChatController::class, 'sendMessage'])
+            ->name('chat.send');
         Route::get('/conversation', [ChatController::class, 'getConversation'])
             ->name('chat.conversation');
+    });
 });
