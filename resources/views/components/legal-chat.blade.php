@@ -106,59 +106,45 @@
                     input.value = '';
                     this.showTypingIndicator();
 
-                    // Get all possible CSRF tokens
-                    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    const windowToken = window.csrfToken;
-                    const token = metaToken || windowToken;
-
+                    // Get CSRF token from meta tag
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    
                     if (!token) {
-                        location.reload(); // Force a page reload to get fresh tokens
+                        console.error('CSRF token not found');
+                        this.addMessage('Error: Security token not found. Please refresh the page.', false);
                         return;
                     }
-
-                    // Get the XSRF token from cookie
-                    const xsrfToken = document.cookie.split('; ')
-                        .find(row => row.startsWith('XSRF-TOKEN='))
-                        ?.split('=')[1];
 
                     const headers = {
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
                     };
-
-                    // Add all possible CSRF tokens
-                    if (token) headers['X-CSRF-TOKEN'] = token;
-                    if (xsrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
 
                     const response = await fetch('{{ route('chat.send') }}', {
                         method: 'POST',
                         headers: headers,
-                        credentials: 'same-origin',
+                        credentials: 'include',
                         body: JSON.stringify({
                             message,
-                            conversation_id: this.conversationId,
-                            _token: token
+                            conversation_id: this.conversationId
                         })
                     });
 
-                    let data;
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        data = await response.json();
-                    } else {
-                        throw new Error('Server returned non-JSON response');
+                    if (response.status === 419) {
+                        // CSRF token mismatch, refresh the page
+                        console.error('CSRF token mismatch');
+                        window.location.reload();
+                        return;
                     }
 
                     if (!response.ok) {
-                        if (response.status === 419 || (data?.code === 'csrf_token_mismatch')) {
-                            location.reload(); // Force a page reload to get fresh tokens
-                            return;
-                        }
-                        throw new Error(data.error || `Server error: ${response.status}`);
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
-                    // Handle the response from the ChatController
+                    const data = await response.json();
+                    
                     if (data.conversation_id) {
                         this.conversationId = data.conversation_id;
                     }
@@ -171,10 +157,6 @@
 
                 } catch (error) {
                     console.error('Chat error:', error);
-                    if (error.message.includes('CSRF') || error.message.includes('session')) {
-                        location.reload();
-                        return;
-                    }
                     this.addMessage('Error: ' + error.message, false);
                 } finally {
                     this.hideTypingIndicator();

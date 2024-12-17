@@ -31,39 +31,16 @@ class VerifyCsrfToken extends Middleware
         try {
             return parent::handle($request, $next);
         } catch (TokenMismatchException $e) {
-            if ($request->expectsJson()) {
+            // If it's an AJAX request, return JSON response
+            if ($request->ajax()) {
                 return response()->json([
-                    'success' => false,
-                    'error' => 'CSRF token mismatch. Please refresh the page.',
+                    'error' => 'CSRF token mismatch',
                     'code' => 'csrf_token_mismatch'
                 ], 419);
             }
-            throw $e;
+
+            // Otherwise, redirect back with error
+            return redirect()->back()->with('error', 'Your session has expired. Please refresh the page.');
         }
-    }
-
-    /**
-     * Determine if the request has a valid CSRF token.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return bool
-     */
-    protected function tokensMatch($request)
-    {
-        $token = $request->input('_token') ?: $request->header('X-CSRF-TOKEN');
-
-        if (!$token && $header = $request->header('X-XSRF-TOKEN')) {
-            $token = urldecode($header);
-        }
-
-        if (!$token && $header = $request->header('Authorization')) {
-            if (strpos($header, 'Bearer ') === 0) {
-                $token = substr($header, 7);
-            }
-        }
-
-        return is_string($token) &&
-               is_string($request->session()->token()) &&
-               hash_equals($request->session()->token(), $token);
     }
 }
