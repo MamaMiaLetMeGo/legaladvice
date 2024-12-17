@@ -21,16 +21,14 @@ use App\Http\Controllers\Lawyer\LawyerDashboardController;
 use App\Models\Conversation;
 use App\Http\Middleware\IsLawyer;
 
-// Chat routes (accessible to all)
 Route::middleware(['web'])->group(function () {
+    // Chat routes (accessible to all)
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::get('/chat/conversation', [ChatController::class, 'getConversation'])->name('chat.conversation');
     Route::get('/test-chat', function () {
         return view('test-chat');
     })->name('test.chat');
-});
 
-Route::middleware('web')->group(function () {
     // Include auth and admin routes
     require __DIR__.'/auth.php';
     require __DIR__.'/admin.php';

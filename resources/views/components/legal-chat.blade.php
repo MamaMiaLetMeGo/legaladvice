@@ -119,20 +119,28 @@
 
             async makeRequest(url, data) {
                 try {
-                    const token = await this.refreshCsrfToken();
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (!token) {
+                        throw new Error('CSRF token not found');
+                    }
+
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include',
+                        credentials: 'same-origin',
                         body: JSON.stringify(data)
                     });
 
                     if (!response.ok) {
+                        if (response.status === 419) {
+                            // Refresh the page if CSRF token is invalid
+                            window.location.reload();
+                            throw new Error('Session expired. Please try again.');
+                        }
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                     }
@@ -169,7 +177,6 @@
                     if (response.message) {
                         this.addMessage(response.message, false);
                     }
-                    
                 } catch (error) {
                     console.error('Chat error:', error);
                     this.addMessage('Sorry, there was an error processing your message. Please try again.', false);
