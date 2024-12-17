@@ -21,13 +21,14 @@ class VerifyCsrfToken extends Middleware
      * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
-    protected function shouldPassThrough($request)
+    protected function tokensMatch($request)
     {
-        if ($request->is('api/chat/*')) {
-            return $request->header('X-Requested-With') === 'XMLHttpRequest' &&
-                   $request->header('Accept') === 'application/json';
+        $token = $request->input('_token') ?: $request->header('X-CSRF-TOKEN');
+
+        if (!$token && $header = $request->header('X-XSRF-TOKEN')) {
+            $token = $this->encrypter->decrypt($header, static::serialized());
         }
 
-        return parent::shouldPassThrough($request);
+        return is_string($token) && hash_equals($request->session()->token(), $token);
     }
 }

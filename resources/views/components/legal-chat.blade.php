@@ -263,23 +263,37 @@
                     input.value = '';
                     this.showTypingIndicator();
 
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    // Get CSRF token from meta tag or window variable
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                        || window.csrfToken;
+
                     if (!token) {
-                        throw new Error('CSRF token not found');
+                        throw new Error('CSRF token not found - please refresh the page');
                     }
+
+                    // Get the XSRF token from cookie if available
+                    const xsrfToken = document.cookie.split('; ')
+                        .find(row => row.startsWith('XSRF-TOKEN='))
+                        ?.split('=')[1];
+
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    };
+
+                    // Add CSRF token in multiple ways to ensure it gets through
+                    if (token) headers['X-CSRF-TOKEN'] = token;
+                    if (xsrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
 
                     const response = await fetch('/api/chat/send', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token,
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        },
+                        headers: headers,
                         credentials: 'same-origin',
                         body: JSON.stringify({
                             message,
-                            conversation_id: this.conversationId
+                            conversation_id: this.conversationId,
+                            _token: token
                         })
                     });
 
@@ -292,6 +306,9 @@
                     }
 
                     if (!response.ok) {
+                        if (response.status === 419) {
+                            throw new Error('Session expired - please refresh the page');
+                        }
                         throw new Error(data.error || `Server error: ${response.status}`);
                     }
 
@@ -304,7 +321,7 @@
 
                 } catch (error) {
                     console.error('Chat error:', error);
-                    this.addMessage(`Error: ${error.message}. Please try again or contact support if the problem persists.`);
+                    this.addMessage(`Error: ${error.message}. ${error.message.includes('refresh') ? '' : 'Please try again or contact support if the problem persists.'}`);
                 } finally {
                     this.hideTypingIndicator();
                 }
