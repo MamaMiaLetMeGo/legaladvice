@@ -106,35 +106,24 @@
                     input.value = '';
                     this.showTypingIndicator();
 
-                    // Get CSRF token from meta tag
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    
-                    if (!token) {
-                        console.error('CSRF token not found');
-                        this.addMessage('Error: Security token not found. Please refresh the page.', false);
-                        return;
-                    }
-
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    };
+                    // Create form data with CSRF token
+                    const formData = new FormData();
+                    formData.append('message', message);
+                    formData.append('conversation_id', this.conversationId || '');
+                    formData.append('_token', '{{ csrf_token() }}');
 
                     const response = await fetch('{{ route('chat.send') }}', {
                         method: 'POST',
-                        headers: headers,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
                         credentials: 'include',
-                        body: JSON.stringify({
-                            message,
-                            conversation_id: this.conversationId
-                        })
+                        body: formData
                     });
 
                     if (response.status === 419) {
                         // CSRF token mismatch, refresh the page
-                        console.error('CSRF token mismatch');
                         window.location.reload();
                         return;
                     }

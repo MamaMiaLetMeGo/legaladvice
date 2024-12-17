@@ -25,42 +25,42 @@ class ChatController extends Controller
         try {
             // Validate the request
             $validated = $request->validate([
-                'message' => 'required|string|max:1000',
-                'conversation_id' => 'nullable|exists:conversations,id'
+                'message' => 'required|string',
+                'conversation_id' => 'nullable|string'
             ]);
 
             // Get or create conversation
             $conversation = null;
-            if (!empty($validated['conversation_id'])) {
+            if ($validated['conversation_id']) {
                 $conversation = Conversation::find($validated['conversation_id']);
             }
             
             if (!$conversation) {
                 $conversation = Conversation::create([
                     'user_id' => auth()->check() ? auth()->id() : null,
-                    'session_id' => session()->getId(),
-                    'status' => 'active'
+                    'status' => 'active',
+                    'session_id' => Session::getId()
                 ]);
             }
 
-            // Create user message
-            $userMessage = new Message([
+            // Save user message
+            $userMessage = Message::create([
+                'conversation_id' => $conversation->id,
                 'content' => $validated['message'],
                 'role' => 'user',
-                'session_id' => session()->getId()
+                'session_id' => Session::getId()
             ]);
-            $conversation->messages()->save($userMessage);
 
             // Get AI response
             $aiResponse = $this->openAIService->generateResponse($validated['message'], $conversation);
 
-            // Create AI message
-            $aiMessage = new Message([
+            // Save AI response
+            $aiMessage = Message::create([
+                'conversation_id' => $conversation->id,
                 'content' => $aiResponse,
                 'role' => 'assistant',
-                'session_id' => session()->getId()
+                'session_id' => Session::getId()
             ]);
-            $conversation->messages()->save($aiMessage);
 
             return response()->json([
                 'success' => true,
@@ -69,26 +69,16 @@ class ChatController extends Controller
             ]);
 
         } catch (ValidationException $e) {
-            Log::error('Validation error in sendMessage', [
-                'errors' => $e->errors(),
-                'request' => $request->all()
-            ]);
+            Log::error('Validation error in chat:', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'error' => 'Invalid input provided.',
-                'errors' => $e->errors()
+                'error' => 'Invalid input provided.'
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error in sendMessage', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-
+            Log::error('Error in chat:', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'error' => 'An error occurred while processing your message.',
-                'debug' => config('app.debug') ? $e->getMessage() : null
+                'error' => 'An error occurred while processing your message.'
             ], 500);
         }
     }
