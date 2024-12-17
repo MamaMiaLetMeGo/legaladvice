@@ -10,7 +10,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Chat routes with middleware
-Route::middleware(['web'])->group(function () {
+Route::middleware(['web', 'session'])->group(function () {
     Route::prefix('chat')->group(function () {
         Route::post('/send', [ChatController::class, 'sendMessage'])
             ->name('chat.send');

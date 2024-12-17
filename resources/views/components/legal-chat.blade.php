@@ -44,39 +44,191 @@
     </div>
 </div>
 
-<!-- Styles remain the same -->
 <style>
     .typing-indicator {
-        display: none;
         padding: 15px;
+        display: none;
     }
+
     .typing-indicator span {
-        height: 10px;
-        width: 10px;
+        height: 8px;
+        width: 8px;
         float: left;
         margin: 0 1px;
         background-color: #9880ff;
         display: block;
         border-radius: 50%;
         opacity: 0.4;
+    }
+
+    .typing-indicator span:nth-of-type(1) {
         animation: typing 1s infinite;
     }
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    .typing-indicator span:nth-of-type(2) {
+        animation: typing 1s infinite 0.2s;
+    }
+
+    .typing-indicator span:nth-of-type(3) {
+        animation: typing 1s infinite 0.4s;
+    }
+
     @keyframes typing {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
+        0% {
+            transform: translateY(0px);
+            background-color: #9880ff;
+        }
+        28% {
+            transform: translateY(-7px);
+            background-color: #65a6ff;
+        }
+        44% {
+            transform: translateY(0px);
+            background-color: #9880ff;
+        }
     }
 </style>
 
-<!-- JavaScript using Alpine.js -->
 <script>
     function legalChat() {
         return {
             isWaitingForLawyer: false,
             isLawyerConnected: false,
             conversationId: null,
+
+            showTypingIndicator() {
+                document.getElementById('typing-indicator').style.display = 'block';
+            },
+
+            hideTypingIndicator() {
+                document.getElementById('typing-indicator').style.display = 'none';
+            },
+
+            async refreshCsrfToken() {
+                try {
+                    const response = await fetch('/sanctum/csrf-cookie', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to refresh CSRF token');
+                    }
+                    
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (!token) {
+                        throw new Error('CSRF token not found after refresh');
+                    }
+                    
+                    return token;
+                } catch (error) {
+                    console.error('Error refreshing CSRF token:', error);
+                    throw error;
+                }
+            },
+
+            async makeRequest(url, data, token) {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+
+                if (response.status === 419) {
+                    // CSRF token mismatch, try to refresh
+                    const newToken = await this.refreshCsrfToken();
+                    return this.makeRequest(url, data, newToken);
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            },
+
+            async sendMessage() {
+                const input = document.getElementById('message-input');
+                const message = input.value.trim();
+                if (!message) return;
+
+                try {
+                    // Store the message temporarily
+                    const tempMessage = message;
+                    input.value = '';
+
+                    // Get CSRF token
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (!token) {
+                        throw new Error('CSRF token not found');
+                    }
+
+                    // Add user message to chat
+                    this.addMessage(tempMessage, true);
+                    this.showTypingIndicator();
+
+                    // Send message to server
+                    const data = {
+                        message: tempMessage,
+                        conversation_id: this.conversationId
+                    };
+
+                    const response = await this.makeRequest('/chat/send', data, token);
+
+                    if (response.success) {
+                        this.conversationId = response.conversation_id;
+                        this.addMessage(response.message);
+                    } else {
+                        throw new Error(response.error || 'Failed to send message');
+                    }
+
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    let errorMessage = 'An error occurred. Please try again.';
+                    
+                    if (error.message.includes('CSRF token')) {
+                        errorMessage = 'Session expired. Please refresh the page.';
+                    } else if (error.message.includes('Network Error')) {
+                        errorMessage = 'Network error. Please check your connection.';
+                    }
+                    
+                    this.addMessage(errorMessage);
+                } finally {
+                    this.hideTypingIndicator();
+                }
+            },
+
+            addMessage(content, isUser = false) {
+                const messagesDiv = document.getElementById('messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'flex items-start';
+
+                const avatar = `
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 rounded-full ${isUser ? 'bg-green-500' : 'bg-blue-500'} flex items-center justify-center">
+                            <span class="text-white font-bold">${isUser ? 'You' : 'AI'}</span>
+                        </div>
+                    </div>
+                `;
+
+                const message = `
+                    <div class="ml-3 ${isUser ? 'bg-green-50' : 'bg-gray-100'} rounded-lg py-3 px-4 max-w-[80%]">
+                        <p class="text-gray-900">${content}</p>
+                        ${!isUser ? this.createFollowUpPrompt() : ''}
+                    </div>
+                `;
+
+                messageDiv.innerHTML = avatar + message;
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            },
 
             createFollowUpPrompt() {
                 return `
@@ -161,7 +313,7 @@
                 const updateInterval = 3000; // Update status every 3 seconds
 
                 // Poll for lawyer connection
-                const pollInterval = setInterval(() => {
+                const pollInterval = setInterval(async () => {
                     try {
                         waitTime += updateInterval;
                         
@@ -218,7 +370,6 @@
                 if (statusDiv) statusDiv.remove();
 
                 this.isWaitingForLawyer = false;
-                this.isLawyerConnected = true;
 
                 // Add lawyer connected message
                 this.addMessage("Attorney John Smith has joined the chat. They have full access to your previous conversation and are ready to assist you.", false);
@@ -250,125 +401,7 @@
                     </div>
                 `;
                 document.getElementById('messages').prepend(notice);
-            },
-
-            async sendMessage() {
-                const input = document.getElementById('message-input');
-                const message = input.value.trim();
-                if (!message) return;
-
-                try {
-                    // Add user message to chat immediately
-                    this.addMessage(message, true);
-                    input.value = '';
-                    this.showTypingIndicator();
-
-                    // Get all possible CSRF tokens
-                    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    const windowToken = window.csrfToken;
-                    const token = metaToken || windowToken;
-
-                    if (!token) {
-                        location.reload(); // Force a page reload to get fresh tokens
-                        return;
-                    }
-
-                    // Get the XSRF token from cookie
-                    const xsrfToken = document.cookie.split('; ')
-                        .find(row => row.startsWith('XSRF-TOKEN='))
-                        ?.split('=')[1];
-
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                    };
-
-                    // Add all possible CSRF tokens
-                    if (token) headers['X-CSRF-TOKEN'] = token;
-                    if (xsrfToken) headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
-
-                    const response = await fetch('/api/chat/send', {
-                        method: 'POST',
-                        headers: headers,
-                        credentials: 'same-origin',
-                        body: JSON.stringify({
-                            message,
-                            conversation_id: this.conversationId,
-                            _token: token
-                        })
-                    });
-
-                    let data;
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        data = await response.json();
-                    } else {
-                        throw new Error('Server returned non-JSON response');
-                    }
-
-                    if (!response.ok) {
-                        if (response.status === 419 || (data?.code === 'csrf_token_mismatch')) {
-                            location.reload(); // Force a page reload to get fresh tokens
-                            return;
-                        }
-                        throw new Error(data.error || `Server error: ${response.status}`);
-                    }
-
-                    if (data.success) {
-                        this.conversationId = data.conversation_id;
-                        this.addMessage(data.message);
-                    } else {
-                        throw new Error(data.error || 'Unknown error occurred');
-                    }
-
-                } catch (error) {
-                    console.error('Chat error:', error);
-                    if (error.message.includes('CSRF') || error.message.includes('session')) {
-                        location.reload();
-                        return;
-                    }
-                    this.addMessage(`Error: ${error.message}. Please try again or contact support if the problem persists.`);
-                } finally {
-                    this.hideTypingIndicator();
-                }
-            },
-
-            showTypingIndicator() {
-                document.getElementById('typing-indicator').style.display = 'block';
-            },
-
-            hideTypingIndicator() {
-                document.getElementById('typing-indicator').style.display = 'none';
-            },
-
-            addMessage(content, isUser = false) {
-                const messagesDiv = document.getElementById('messages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'flex items-start';
-
-                const avatar = `
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 rounded-full ${isUser ? 'bg-green-500' : 'bg-blue-500'} flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">${isUser ? 'You' : (this.isLawyerConnected ? 'LAW' : 'AI')}</span>
-                        </div>
-                    </div>
-                `;
-
-                const message = `
-                    <div class="ml-3 ${isUser ? 'bg-green-50' : 'bg-gray-100'} rounded-lg py-2 px-3 max-w-[80%]">
-                        <p class="text-gray-900">${content}</p>
-                        ${(!isUser && !this.isLawyerConnected) ? this.createFollowUpPrompt() : ''}
-                    </div>
-                `;
-
-                messageDiv.innerHTML = avatar + message;
-                messagesDiv.appendChild(messageDiv);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            },
-
-            // ... (rest of your functions from before)
-            // Include all the other functions (connectWithAttorney, checkForLawyerConnection, etc.)
+            }
         }
     }
-</script> 
+</script>

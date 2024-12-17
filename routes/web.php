@@ -21,12 +21,15 @@ use App\Http\Controllers\Lawyer\LawyerDashboardController;
 use App\Models\Conversation;
 use App\Http\Middleware\IsLawyer;
 
-Route::get('/debug/middleware', function() {
-    dd(
-        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getMiddlewareGroups(),
-        app()->make(\Illuminate\Contracts\Http\Kernel::class)->getRouteMiddleware()
-    );
+// Chat routes (accessible to all)
+Route::middleware(['web'])->group(function () {
+    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/conversation', [ChatController::class, 'getConversation'])->name('chat.conversation');
+    Route::get('/test-chat', function () {
+        return view('test-chat');
+    })->name('test.chat');
 });
+
 Route::middleware('web')->group(function () {
     // Include auth and admin routes
     require __DIR__.'/auth.php';
@@ -146,26 +149,18 @@ Route::middleware('web')->group(function () {
     });
 
     // Add these before the catch-all routes (/{category:slug} routes)
-    Route::match(['get', 'post'], '/test-chat', function () {
-        if (request()->isMethod('post')) {
-            return app(ChatController::class)->sendMessage(request());
-        }
-        return view('test-chat');
-    })->name('test.chat');
-
-    // Catch-all routes for posts and categories (must be last)
-    Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
-    Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
+    Route::post('/test-chat', function () {
+        return app(ChatController::class)->sendMessage(request());
+    })->name('test.chat.post');
 
     // Debug route to check pending conversations
     Route::get('/debug/pending-conversations', function () {
         return Conversation::where('status', 'pending')->with('messages')->get();
     })->middleware(['auth', IsLawyer::class]);
 
-    // Chat routes (accessible to all)
-    Route::post('/api/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::get('/api/chat/conversation', [ChatController::class, 'getConversation']);
-
+    // Catch-all routes for posts and categories (must be last)
+    Route::get('/{category:slug}/{post:slug}', [PostController::class, 'show'])->name('posts.show');
+    Route::get('/{category:slug}', [CategoryViewController::class, 'show'])->name('categories.show');
 });
 
 // Development only routes

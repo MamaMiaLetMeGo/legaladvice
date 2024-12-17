@@ -10,11 +10,15 @@ class Message extends Model
         'conversation_id',
         'user_id',
         'content',
-        'is_from_user'
+        'is_from_user',
+        'session_id',
+        'is_guest',
+        'ip_address'
     ];
 
     protected $casts = [
-        'is_from_user' => 'boolean'
+        'is_from_user' => 'boolean',
+        'is_guest' => 'boolean'
     ];
 
     public function conversation()

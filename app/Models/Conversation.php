@@ -14,11 +14,14 @@ class Conversation extends Model
         'lawyer_id',
         'status',
         'ip_address',
-        'last_message_at'
+        'last_message_at',
+        'session_id',
+        'is_guest'
     ];
 
     protected $casts = [
-        'last_message_at' => 'datetime'
+        'last_message_at' => 'datetime',
+        'is_guest' => 'boolean'
     ];
 
     public function messages()
