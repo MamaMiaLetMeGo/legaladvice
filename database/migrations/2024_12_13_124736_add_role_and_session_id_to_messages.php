@@ -4,17 +4,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class UpdateMessagesTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
         Schema::table('messages', function (Blueprint $table) {
-            if (!Schema::hasColumn('messages', 'role')) {
-                $table->string('role')->default('user')->after('content');
-            }
-            if (!Schema::hasColumn('messages', 'session_id')) {
-                $table->string('session_id')->nullable()->after('role');
-            }
+            $table->string('role')->default('user')->after('content');
+            $table->string('session_id')->nullable()->after('role');
         });
     }
 
@@ -24,4 +20,4 @@ class UpdateMessagesTable extends Migration
             $table->dropColumn(['role', 'session_id']);
         });
     }
-}
+};
