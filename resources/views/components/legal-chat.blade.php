@@ -215,49 +215,49 @@
                 `;
             },
 
-            async requestLawyer() {
-                if (this.isWaitingForLawyer) return;
-                
-                this.isWaitingForLawyer = true;
-                try {
-                    const response = await this.makeRequest('/chat/request-lawyer', {
-                        conversation_id: this.conversationId
-                    });
-                    
-                    if (response.success) {
-                        this.addMessage('Please wait while we connect you with an available attorney...', false);
-                        this.startLawyerConnectionProcess();
-                    } else {
-                        throw new Error(response.error || 'Failed to request lawyer');
-                    }
-                } catch (error) {
-                    console.error('Error requesting lawyer:', error);
-                    this.addMessage('Sorry, we could not connect you with an attorney at this time. Please try again later.', false);
-                    this.isWaitingForLawyer = false;
-                }
+            sendPredefinedMessage(message) {
+                document.getElementById('message-input').value = message;
+                this.sendMessage();
             },
 
-            startLawyerConnectionProcess() {
+            async connectWithAttorney() {
+                this.isWaitingForLawyer = true;
+                
                 // Initial connecting message
                 this.addMessage("We are now connecting you with one of our attorneys based on your chat history. Please wait a moment...", false);
                 
                 // Show loading animation
                 this.showTypingIndicator();
 
-                // Simulate the connection process
-                setTimeout(() => {
+                try {
+                    // Initial processing (5 seconds)
+                    await new Promise(resolve => setTimeout(resolve, 5000));
                     this.hideTypingIndicator();
+
+                    // First status update
                     this.addMessage("We've located several attorneys with expertise in your matter. Checking their availability now...", false);
                     
-                    setTimeout(() => {
-                        this.addMessage("We've found attorneys available to assist you. Preparing secure connection...", false);
-                        
-                        setTimeout(() => {
-                            this.addMessage("You're in our priority queue. One of our attorneys will join this chat shortly. Please stay in this window.", false);
-                            this.checkForLawyerConnection();
-                        }, 3000);
-                    }, 4000);
-                }, 5000);
+                    // Checking availability (4 seconds)
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    
+                    // Second status update
+                    this.addMessage("We've found attorneys available to assist you. Preparing secure connection...", false);
+
+                    // Preparing connection (3 seconds)
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Final queue message
+                    this.addMessage("You're in our priority queue. One of our attorneys will join this chat shortly. Please stay in this window.", false);
+                    
+                    // Start checking for lawyer connection
+                    this.checkForLawyerConnection();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.hideTypingIndicator();
+                    this.isWaitingForLawyer = false;
+                    this.addMessage("Sorry, we encountered an error connecting you with an attorney. Please try again.", false);
+                }
             },
 
             checkForLawyerConnection() {
@@ -267,15 +267,21 @@
                 const totalWaitTime = 20000; // 20 seconds total wait
                 const updateInterval = 3000; // Update status every 3 seconds
 
+                // Poll for lawyer connection
                 const pollInterval = setInterval(() => {
-                    waitTime += updateInterval;
-                    
-                    // Update the waiting status
-                    this.updateWaitingStatus(waitTime, totalWaitTime);
+                    try {
+                        waitTime += updateInterval;
+                        
+                        // Update the waiting status with more specific messages
+                        this.updateWaitingStatus(waitTime, totalWaitTime);
 
-                    if (waitTime >= totalWaitTime) {
-                        clearInterval(pollInterval);
-                        this.lawyerConnected();
+                        if (waitTime >= totalWaitTime) {
+                            clearInterval(pollInterval);
+                            this.lawyerConnected();
+                        }
+
+                    } catch (error) {
+                        console.error('Error checking lawyer connection:', error);
                     }
                 }, updateInterval);
             },
@@ -285,8 +291,10 @@
                 statusDiv.id = 'lawyer-status';
                 statusDiv.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg';
                 
+                // Calculate progress
                 const progress = Math.min((currentWait / totalWait) * 100, 100);
                 
+                // More gradual status messages
                 let statusMessage = 'Initiating secure connection';
                 if (progress > 20) statusMessage = 'Verifying attorney credentials';
                 if (progress > 40) statusMessage = 'Attorney reviewing your case details';
@@ -350,10 +358,6 @@
                 `;
                 document.getElementById('messages').prepend(notice);
             },
-
-            continueWithAI() {
-                this.addMessage('I understand you want to continue with the AI assistant. How else can I help you?', false);
-            }
         }
     }
 </script>
